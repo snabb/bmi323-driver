@@ -1,0 +1,42 @@
+[package]
+name = "bmi323-driver-embassy-stm32g030f6-examples"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+bmi323-driver = { path = "..", features = ["defmt"] }
+cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
+cortex-m-rt = "0.7"
+defmt = "1.0.1"
+defmt-rtt = "1.1.0"
+embassy-executor = { version = "0.10.0", features = ["platform-cortex-m", "defmt", "executor-thread"] }
+embassy-stm32 = { version = "0.6", features = ["defmt", "exti", "memory-x", "stm32g030f6", "time-driver-any"] }
+embassy-time = { version = "0.5.1", features = ["defmt"] }
+panic-probe = { version = "1.0.0", features = ["print-defmt"] }
+
+[profile.dev]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+incremental = false
+
+[profile.dev.build-override]
+opt-level = 0
+codegen-units = 256
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+incremental = false
+
+[profile.release.build-override]
+opt-level = 0
+codegen-units = 256
+
+[profile.bench]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+incremental = false

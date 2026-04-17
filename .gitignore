@@ -1,0 +1,7 @@
+/target
+/*.pdf
+/Cargo.lock
+/embassy-stm32g030f6-examples/target
+/.github/.DS_Store
+/.DS_Store
+/.claude/
