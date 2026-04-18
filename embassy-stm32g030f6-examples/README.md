@@ -47,10 +47,25 @@ From this directory:
 ```bash
 rustup target add thumbv6m-none-eabi
 cargo install probe-rs-tools --locked
-cargo run-motion
 ```
 
-If you only want to build:
+Run examples:
+
+```bash
+cargo run-motion
+cargo run-no-motion
+cargo run-stream
+cargo run-self-test
+cargo run-tap
+cargo run-orientation
+cargo run-flat
+cargo run-significant-motion
+cargo run-tilt
+cargo run-steps
+cargo run-alt-config
+```
+
+Build examples without flashing:
 
 ```bash
 cargo build-motion
@@ -71,30 +86,6 @@ If you only want to flash and not attach a runner session:
 ```bash
 cargo build-motion
 probe-rs download --chip STM32G030F6 target/thumbv6m-none-eabi/debug/motion
-```
-
-To run the step example:
-
-```bash
-cargo run-steps
-```
-
-To run the self-test example:
-
-```bash
-cargo run-self-test
-```
-
-To run the no-motion, tap, orientation, flat, significant-motion, tilt, or alternate-config example:
-
-```bash
-cargo run-no-motion
-cargo run-tap
-cargo run-orientation
-cargo run-flat
-cargo run-significant-motion
-cargo run-tilt
-cargo run-alt-config
 ```
 
 Recommended checks before flashing:
