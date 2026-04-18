@@ -2,7 +2,7 @@
 #![no_main]
 
 use bmi323_driver::{
-    AccelRange, ActiveLevel, AltAccelSwitchProfile, AltConfigSwitchSource, Bmi323Async,
+    ActiveLevel, AltAccelSwitchProfile, AltConfigSwitchSource, Bmi323Async,
     EventReportMode, I2C_ADDRESS_PRIMARY, InterruptChannel, InterruptPinConfig,
     InterruptRoute, InterruptSource, MotionAxes, NoMotionConfig, OutputDataRate,
     OutputMode, ReferenceUpdate,
@@ -179,7 +179,7 @@ async fn main(_spawner: Spawner) {
             Ok(status) => match imu.alt_status().await {
                 Ok(alt_status) => match imu.read_accel().await {
                     Ok(accel) => {
-                        let [x, y, z] = accel.as_g(AccelRange::G8);
+                        let [x, y, z] = accel.as_g(imu.accel_range());
                         info!(
                             "status any_motion={} no_motion={} alt_accel={} accel_g=({=f32}, {=f32}, {=f32})",
                             status.any_motion(),

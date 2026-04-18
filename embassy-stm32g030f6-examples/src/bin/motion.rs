@@ -2,7 +2,7 @@
 #![no_main]
 
 use bmi323_driver::{
-    AccelConfig, AccelMode, AccelRange, ActiveLevel, AnyMotionConfig, Bmi323Async, EventReportMode,
+    AccelConfig, AccelMode, ActiveLevel, AnyMotionConfig, Bmi323Async, EventReportMode,
     I2C_ADDRESS_PRIMARY, InterruptChannel, InterruptPinConfig, InterruptRoute,
     InterruptSource, MotionAxes, OutputDataRate, OutputMode, ReferenceUpdate,
 };
@@ -135,7 +135,7 @@ async fn main(_spawner: Spawner) {
         {
             Ok(status) if status.any_motion() => match imu.read_accel().await {
                 Ok(accel) => {
-                    let [x, y, z] = accel.as_g(AccelRange::G8);
+                    let [x, y, z] = accel.as_g(imu.accel_range());
                     info!("motion detected accel_g=({=f32}, {=f32}, {=f32})", x, y, z);
                 }
                 Err(err) => error!("BMI323 accel read failed: {:?}", err),
