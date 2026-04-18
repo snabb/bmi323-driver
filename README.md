@@ -3,6 +3,7 @@
 [![crates.io](https://img.shields.io/crates/v/bmi323-driver.svg)](https://crates.io/crates/bmi323-driver)
 [![docs.rs](https://img.shields.io/docsrs/bmi323-driver)](https://docs.rs/bmi323-driver)
 [![CI](https://github.com/snabb/bmi323-driver/actions/workflows/ci.yml/badge.svg)](https://github.com/snabb/bmi323-driver/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/snabb/bmi323-driver/graph/badge.svg)](https://codecov.io/gh/snabb/bmi323-driver)
 [![license](https://img.shields.io/crates/l/bmi323-driver.svg)](https://github.com/snabb/bmi323-driver/blob/main/LICENSE)
 [![rust-version](https://img.shields.io/badge/rust-1.85%2B-93450a.svg)](https://www.rust-lang.org/)
 
