@@ -2,7 +2,7 @@
 #![no_main]
 
 use bmi323_driver::{
-    AccelConfig, AccelRange, ActiveLevel, Bmi323Async, EventReportMode, InterruptChannel,
+    AccelConfig, ActiveLevel, Bmi323Async, EventReportMode, InterruptChannel,
     I2C_ADDRESS_PRIMARY, InterruptPinConfig, InterruptRoute, InterruptSource,
     OutputDataRate, OutputMode, SignificantMotionConfig,
 };
@@ -132,7 +132,7 @@ async fn main(_spawner: Spawner) {
         {
             Ok(status) if status.significant_motion() => match imu.read_accel().await {
                 Ok(accel) => {
-                    let [x, y, z] = accel.as_g(AccelRange::G8);
+                    let [x, y, z] = accel.as_g(imu.accel_range());
                     info!(
                         "significant motion detected accel_g=({=f32}, {=f32}, {=f32})",
                         x, y, z

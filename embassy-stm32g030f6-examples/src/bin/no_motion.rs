@@ -2,7 +2,7 @@
 #![no_main]
 
 use bmi323_driver::{
-    AccelConfig, AccelRange, ActiveLevel, AverageSamples, Bmi323Async, EventReportMode,
+    AccelConfig, ActiveLevel, AverageSamples, Bmi323Async, EventReportMode,
     I2C_ADDRESS_PRIMARY, InterruptChannel, InterruptPinConfig, InterruptRoute,
     InterruptSource, MotionAxes, NoMotionConfig, OutputDataRate, OutputMode,
     ReferenceUpdate,
@@ -136,7 +136,7 @@ async fn main(_spawner: Spawner) {
         {
             Ok(status) if status.no_motion() => match imu.read_accel().await {
                 Ok(accel) => {
-                    let [x, y, z] = accel.as_g(AccelRange::G8);
+                    let [x, y, z] = accel.as_g(imu.accel_range());
                     info!(
                         "no motion detected accel_g=({=f32}, {=f32}, {=f32})",
                         x, y, z
