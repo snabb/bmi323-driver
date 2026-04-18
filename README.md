@@ -215,6 +215,14 @@ where
 Hardware-specific STM32G030F6 Embassy examples live in the separate
 sub-crate [embassy-stm32g030f6-examples](./embassy-stm32g030f6-examples).
 
+### STM32 Motion Detection Example
+
+This screenshot shows the `embassy-stm32g030f6-examples/src/bin/motion.rs`
+example running on an STM32G030F6 and printing detected accelerometer samples
+after BMI323 motion interrupts fire.
+
+![STM32 BMI323 motion detection example run](./assets/motion-detection-example-stm32g030f6.png)
+
 ## License
 
 MIT. See [LICENSE](./LICENSE).
