@@ -8,10 +8,10 @@
 
 `bmi323-driver` is a `no_std` Rust driver for the Bosch BMI323 6-DoF IMU.
 
-The data sheet is available at Bosh Sensortec web site: https://www.bosch-sensortec.com/en/products/motion-sensors/imus/bmi323
+The data sheet is available at Bosch Sensortec web site: https://www.bosch-sensortec.com/en/products/motion-sensors/imus/bmi323
 
-It is designed to be transport-agnostic, small, and usable both in generic
-embedded-hal applications and in async Embassy-based firmware.
+This driver is designed to be transport-agnostic, small, and usable both
+in generic embedded-hal applications and in async Embassy-based firmware.
 
 `init()` performs a soft reset, so the driver starts from a known sensor state.
 After `init()`, configure the accelerometer and gyroscope explicitly before
