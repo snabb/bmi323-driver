@@ -631,10 +631,7 @@ fn async_i2c_reset_step_counter_sets_reset_bit() {
 
 #[test]
 fn async_i2c_set_interrupt_latching_writes_int_conf() {
-    let expectations = [
-        write_word(INT_CONF, 0x0001),
-        write_word(INT_CONF, 0x0000),
-    ];
+    let expectations = [write_word(INT_CONF, 0x0001), write_word(INT_CONF, 0x0000)];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323Async::new_i2c(i2c, ADDR);
 

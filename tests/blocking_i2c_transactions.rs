@@ -649,10 +649,7 @@ fn reset_step_counter_sets_reset_bit() {
 
 #[test]
 fn set_interrupt_latching_writes_int_conf() {
-    let expectations = [
-        write_word(INT_CONF, 0x0001),
-        write_word(INT_CONF, 0x0000),
-    ];
+    let expectations = [write_word(INT_CONF, 0x0001), write_word(INT_CONF, 0x0000)];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
@@ -773,8 +770,8 @@ fn read_temperature_celsius_converts_raw_correctly() {
 #[test]
 fn read_accel_and_gyro_read_from_separate_registers() {
     let expectations = [
-        read_words(ACC_DATA_X, &[100, 0xFFC8, 1]),   // x=100, y=-56, z=1
-        read_words(GYR_DATA_X, &[50, 0xFF9C, 3]),    // x=50,  y=-100, z=3
+        read_words(ACC_DATA_X, &[100, 0xFFC8, 1]), // x=100, y=-56, z=1
+        read_words(GYR_DATA_X, &[50, 0xFF9C, 3]),  // x=50,  y=-100, z=3
     ];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
