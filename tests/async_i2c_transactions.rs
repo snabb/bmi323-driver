@@ -7,15 +7,15 @@ use bmi323_driver::{
     AltConfigSwitchSource, AltGyroConfig, AnyMotionConfig, AverageSamples, Bandwidth, Bmi323Async,
     EventReportMode, FeatureBlockingMode, FifoConfig, FlatConfig, GyroConfig, GyroMode, GyroRange,
     InterruptChannel, InterruptPinConfig, InterruptRoute, InterruptSource, MotionAxes,
-    NoMotionConfig, OrientationConfig, OrientationMode, OutputDataRate, OutputMode, ReferenceUpdate,
-    SelfTestSelection, SignificantMotionConfig, StepCounterConfig, TapAxis, TapConfig,
-    TapDetectionMode, TapReportingMode, TiltConfig,
+    NoMotionConfig, OrientationConfig, OrientationMode, OutputDataRate, OutputMode,
+    ReferenceUpdate, SelfTestSelection, SignificantMotionConfig, StepCounterConfig, TapAxis,
+    TapConfig, TapDetectionMode, TapReportingMode, TiltConfig,
 };
+use embedded_hal::i2c::ErrorKind as I2cErrorKind;
 use embedded_hal_mock::eh1::delay::{CheckedDelay, NoopDelay, Transaction as DelayTransaction};
 use embedded_hal_mock::eh1::digital::{
     Mock as PinMock, State as PinState, Transaction as PinTransaction,
 };
-use embedded_hal::i2c::ErrorKind as I2cErrorKind;
 use embedded_hal_mock::eh1::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
 const ADDR: u8 = 0x68;
@@ -785,7 +785,10 @@ fn async_i2c_init_returns_invalid_chip_id_error() {
 
     let result = block_on(imu.init(&mut delay));
 
-    assert!(matches!(result, Err(bmi323_driver::Error::InvalidChipId(0xAB))));
+    assert!(matches!(
+        result,
+        Err(bmi323_driver::Error::InvalidChipId(0xAB))
+    ));
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -1044,8 +1047,7 @@ fn async_i2c_run_self_test_returns_restore_error_when_restore_configuration_fail
         write_word(FEATURE_DATA_ADDR, EXT_ST_RESULT),
         read_word(FEATURE_DATA_TX, 0x0078),
         // restore fails: first write (ACC_CONF restore) returns an error
-        I2cTransaction::write(ADDR, vec![ACC_CONF, 0x27, 0x41])
-            .with_error(I2cErrorKind::Other),
+        I2cTransaction::write(ADDR, vec![ACC_CONF, 0x27, 0x41]).with_error(I2cErrorKind::Other),
     ];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323Async::new_i2c(i2c, ADDR);

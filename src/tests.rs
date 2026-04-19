@@ -387,10 +387,7 @@ fn interrupt_map_location_covers_remaining_sources() {
         interrupt_map_location(InterruptSource::NoMotion),
         (INT_MAP1, 0)
     );
-    assert_eq!(
-        interrupt_map_location(InterruptSource::Flat),
-        (INT_MAP1, 4)
-    );
+    assert_eq!(interrupt_map_location(InterruptSource::Flat), (INT_MAP1, 4));
     assert_eq!(
         interrupt_map_location(InterruptSource::Orientation),
         (INT_MAP1, 6)
@@ -411,10 +408,7 @@ fn interrupt_map_location_covers_remaining_sources() {
         interrupt_map_location(InterruptSource::Tilt),
         (INT_MAP1, 14)
     );
-    assert_eq!(
-        interrupt_map_location(InterruptSource::Tap),
-        (INT_MAP2, 0)
-    );
+    assert_eq!(interrupt_map_location(InterruptSource::Tap), (INT_MAP2, 0));
     assert_eq!(
         interrupt_map_location(InterruptSource::I3cSync),
         (INT_MAP2, 2)
