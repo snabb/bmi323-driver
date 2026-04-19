@@ -320,3 +320,168 @@ fn tilt_segment_size_zero_boundary() {
     assert_eq!(TiltConfig::segment_size_from_seconds(0.0), 0);
     assert!((TiltConfig::segment_size_to_seconds(0) - 0.0).abs() < 1e-6);
 }
+
+#[test]
+fn error_word_conf_error_flags_decode_correctly() {
+    let accel_err = ErrorWord(1 << 5);
+    assert!(accel_err.accel_conf_error());
+    assert!(!accel_err.gyro_conf_error());
+    let gyro_err = ErrorWord(1 << 6);
+    assert!(!gyro_err.accel_conf_error());
+    assert!(gyro_err.gyro_conf_error());
+    assert!(!ErrorWord(0).accel_conf_error());
+    assert!(!ErrorWord(0).gyro_conf_error());
+}
+
+#[test]
+fn interrupt_status_decodes_all_bits() {
+    assert!(InterruptStatus(1 << 0).no_motion());
+    assert!(InterruptStatus(1 << 1).any_motion());
+    assert!(InterruptStatus(1 << 2).flat());
+    assert!(InterruptStatus(1 << 3).orientation());
+    assert!(InterruptStatus(1 << 4).step_detector());
+    assert!(InterruptStatus(1 << 5).step_counter());
+    assert!(InterruptStatus(1 << 7).tilt());
+    assert!(InterruptStatus(1 << 8).tap());
+    assert!(InterruptStatus(1 << 10).feature_status());
+    assert!(InterruptStatus(1 << 11).temp_data_ready());
+    assert!(InterruptStatus(1 << 14).fifo_watermark());
+    assert!(InterruptStatus(1 << 15).fifo_full());
+    let none = InterruptStatus(0);
+    assert!(!none.no_motion());
+    assert!(!none.any_motion());
+    assert!(!none.flat());
+    assert!(!none.tilt());
+    assert!(!none.tap());
+    assert!(!none.fifo_full());
+}
+
+#[test]
+fn self_test_result_skips_unchecked_component() {
+    // Gyroscope-only selection: accelerometer_ok() returns true even if detail bits are 0
+    let gyro_only = SelfTestResult {
+        selection: SelfTestSelection::Gyroscope,
+        passed: false,
+        sample_rate_error: false,
+        error_status: 0,
+        detail: SelfTestDetail(0),
+    };
+    assert!(gyro_only.accelerometer_ok());
+    assert!(!gyro_only.gyroscope_ok());
+
+    // Accelerometer-only selection: gyroscope_ok() returns true even if detail bits are 0
+    let accel_only = SelfTestResult {
+        selection: SelfTestSelection::Accelerometer,
+        passed: false,
+        sample_rate_error: false,
+        error_status: 0,
+        detail: SelfTestDetail(0),
+    };
+    assert!(!accel_only.accelerometer_ok());
+    assert!(accel_only.gyroscope_ok());
+}
+
+#[test]
+fn interrupt_map_location_covers_remaining_sources() {
+    assert_eq!(
+        interrupt_map_location(InterruptSource::NoMotion),
+        (INT_MAP1, 0)
+    );
+    assert_eq!(
+        interrupt_map_location(InterruptSource::Flat),
+        (INT_MAP1, 4)
+    );
+    assert_eq!(
+        interrupt_map_location(InterruptSource::Orientation),
+        (INT_MAP1, 6)
+    );
+    assert_eq!(
+        interrupt_map_location(InterruptSource::StepDetector),
+        (INT_MAP1, 8)
+    );
+    assert_eq!(
+        interrupt_map_location(InterruptSource::StepCounter),
+        (INT_MAP1, 10)
+    );
+    assert_eq!(
+        interrupt_map_location(InterruptSource::SignificantMotion),
+        (INT_MAP1, 12)
+    );
+    assert_eq!(
+        interrupt_map_location(InterruptSource::Tilt),
+        (INT_MAP1, 14)
+    );
+    assert_eq!(
+        interrupt_map_location(InterruptSource::Tap),
+        (INT_MAP2, 0)
+    );
+    assert_eq!(
+        interrupt_map_location(InterruptSource::I3cSync),
+        (INT_MAP2, 2)
+    );
+    assert_eq!(
+        interrupt_map_location(InterruptSource::FeatureStatus),
+        (INT_MAP2, 4)
+    );
+    assert_eq!(
+        interrupt_map_location(InterruptSource::TempDataReady),
+        (INT_MAP2, 6)
+    );
+    assert_eq!(
+        interrupt_map_location(InterruptSource::GyroDataReady),
+        (INT_MAP2, 8)
+    );
+    assert_eq!(
+        interrupt_map_location(InterruptSource::FifoWatermark),
+        (INT_MAP2, 12)
+    );
+    assert_eq!(
+        interrupt_map_location(InterruptSource::FifoFull),
+        (INT_MAP2, 14)
+    );
+}
+
+#[test]
+fn no_motion_additional_helpers_delegate_correctly() {
+    assert!((NoMotionConfig::hysteresis_to_g(256) - 0.5).abs() < 1e-4);
+    assert!((NoMotionConfig::wait_time_to_seconds(4) - 4.0 / 50.0).abs() < 1e-4);
+    assert_eq!(NoMotionConfig::interrupt_hold_from_millis(10.0), 4);
+    assert!((NoMotionConfig::interrupt_hold_to_millis(4) - 10.0).abs() < 1e-4);
+}
+
+#[test]
+fn flat_config_interrupt_hold_delegates_correctly() {
+    assert_eq!(FlatConfig::interrupt_hold_from_millis(10.0), 4);
+    assert!((FlatConfig::interrupt_hold_to_millis(4) - 10.0).abs() < 1e-4);
+}
+
+#[test]
+fn orientation_slope_threshold_and_interrupt_hold_delegates_correctly() {
+    assert_eq!(OrientationConfig::slope_threshold_from_g(0.25), 128);
+    assert!((OrientationConfig::slope_threshold_to_g(128) - 0.25).abs() < 1e-4);
+    assert_eq!(OrientationConfig::interrupt_hold_from_millis(10.0), 4);
+    assert!((OrientationConfig::interrupt_hold_to_millis(4) - 10.0).abs() < 1e-4);
+}
+
+#[test]
+fn tap_gesture_duration_and_short_duration_helpers() {
+    // max_gesture_duration: raw / 25 s
+    assert!((TapConfig::max_gesture_duration_to_seconds(16) - 0.64).abs() < 1e-4);
+    // short_duration: raw * 200 → raw from seconds
+    assert_eq!(TapConfig::short_duration_from_seconds(0.03), 6);
+    assert_eq!(TapConfig::interrupt_hold_from_millis(10.0), 4);
+    assert!((TapConfig::interrupt_hold_to_millis(4) - 10.0).abs() < 1e-4);
+}
+
+#[test]
+fn significant_motion_block_size_to_seconds_and_interrupt_hold() {
+    assert!((SignificantMotionConfig::block_size_to_seconds(250) - 5.0).abs() < 1e-4);
+    assert_eq!(SignificantMotionConfig::interrupt_hold_from_millis(10.0), 4);
+    assert!((SignificantMotionConfig::interrupt_hold_to_millis(4) - 10.0).abs() < 1e-4);
+}
+
+#[test]
+fn tilt_interrupt_hold_delegates_correctly() {
+    assert_eq!(TiltConfig::interrupt_hold_from_millis(10.0), 4);
+    assert!((TiltConfig::interrupt_hold_to_millis(4) - 10.0).abs() < 1e-4);
+}
