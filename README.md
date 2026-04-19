@@ -213,7 +213,7 @@ where
 - `examples/async_i2c_self_test.rs`
   Generic async built-in accelerometer and gyroscope self-test.
 
-Hardware-specific STM32G030F6 Embassy examples live in the separate
+Hardware-specific [STM32G030F6](https://www.st.com/en/microcontrollers-microprocessors/stm32g030f6.html) [Embassy](https://embassy.dev/) examples are in the separate
 sub-crate [embassy-stm32g030f6-examples](./embassy-stm32g030f6-examples).
 
 ### STM32 Motion Detection Example

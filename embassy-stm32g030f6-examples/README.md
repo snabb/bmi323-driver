@@ -1,7 +1,7 @@
 # bmi323-driver Embassy STM32G030F6 examples
 
-This crate contains the hardware-specific Embassy examples for the main
-`bmi323-driver` library.
+This crate contains the [STM32G030F6](https://www.st.com/en/microcontrollers-microprocessors/stm32g030f6.html)
+hardware-specific [Embassy](https://embassy.dev/) examples for the main `bmi323-driver` library.
 
 It keeps the STM32-specific dependencies, target configuration, and `probe-rs`
 runner setup out of the main driver crate.
@@ -11,7 +11,7 @@ The examples assume:
 - target: `thumbv6m-none-eabi`
 - chip: `STM32G030F6` in `probe-rs`
 
-These examples work with the following hardware:
+These examples were tested with the following hardware:
 - [7Semi STM32G030F6P6 Anchor STM32 mini Development Board](https://7semi.com/7semi-stm32g030f6p6-anchor-stm32-mini-development-board/)
 - [7Semi BMI323 IMU Breakout Board – 6DOF Accelerometer + Gyroscope with Qwiic Support (SPI/I2C)](https://7semi.com/7semi-bmi323-imu-sensor-breakout-board-6dof-qwiic-spi-i2c/)
 
@@ -90,14 +90,12 @@ probe-rs download --chip STM32G030F6 target/thumbv6m-none-eabi/debug/motion
 
 Recommended checks before flashing:
 
-1. Confirm probe-rs sees the chip name on your machine:
-   `probe-rs chip list | grep STM32G030`
-2. Connect SWD:
+1. Connect SWD:
    - `SWDIO`
    - `SWCLK`
    - `GND`
    - target power
-3. Keep `BOOT0` low so the MCU boots your flashed firmware.
+2. Confirm probe-rs sees the probe:
+   `probe-rs list`
 
-If `probe-rs chip list` shows a different exact chip spelling on your
-installation, update [`.cargo/config.toml`](./.cargo/config.toml) to match.
+You need to update at least [`Cargo.toml`] and [`.cargo/config.toml`](./.cargo/config.toml) to use some different STM32 MCU.
