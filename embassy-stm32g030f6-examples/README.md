@@ -98,4 +98,4 @@ Recommended checks before flashing:
 2. Confirm probe-rs sees the probe:
    `probe-rs list`
 
-You need to update at least [`Cargo.toml`] and [`.cargo/config.toml`](./.cargo/config.toml) to use some different STM32 MCU.
+You need to update at least [`Cargo.toml`](./Cargo.toml) and [`.cargo/config.toml`](./.cargo/config.toml) to use some different STM32 MCU.
