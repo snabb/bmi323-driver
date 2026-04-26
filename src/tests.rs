@@ -341,18 +341,30 @@ fn interrupt_status_decodes_all_bits() {
     assert!(InterruptStatus(1 << 3).orientation());
     assert!(InterruptStatus(1 << 4).step_detector());
     assert!(InterruptStatus(1 << 5).step_counter());
+    assert!(InterruptStatus(1 << 6).significant_motion());
     assert!(InterruptStatus(1 << 7).tilt());
     assert!(InterruptStatus(1 << 8).tap());
     assert!(InterruptStatus(1 << 10).feature_status());
     assert!(InterruptStatus(1 << 11).temp_data_ready());
+    assert!(InterruptStatus(1 << 12).gyro_data_ready());
+    assert!(InterruptStatus(1 << 13).accel_data_ready());
     assert!(InterruptStatus(1 << 14).fifo_watermark());
     assert!(InterruptStatus(1 << 15).fifo_full());
     let none = InterruptStatus(0);
     assert!(!none.no_motion());
     assert!(!none.any_motion());
     assert!(!none.flat());
+    assert!(!none.orientation());
+    assert!(!none.step_detector());
+    assert!(!none.step_counter());
+    assert!(!none.significant_motion());
     assert!(!none.tilt());
     assert!(!none.tap());
+    assert!(!none.feature_status());
+    assert!(!none.temp_data_ready());
+    assert!(!none.gyro_data_ready());
+    assert!(!none.accel_data_ready());
+    assert!(!none.fifo_watermark());
     assert!(!none.fifo_full());
 }
 
