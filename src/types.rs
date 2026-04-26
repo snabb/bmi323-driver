@@ -542,6 +542,18 @@ pub struct FifoConfig {
     pub include_temperature: bool,
 }
 
+impl Default for FifoConfig {
+    fn default() -> Self {
+        Self {
+            stop_on_full: false,
+            include_time: false,
+            include_accel: false,
+            include_gyro: false,
+            include_temperature: false,
+        }
+    }
+}
+
 impl FifoConfig {
     /// Encode the configuration into the BMI323 register bit layout.
     pub const fn to_word(self) -> u16 {
