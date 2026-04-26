@@ -45,6 +45,14 @@ jobs:
         working-directory: embassy-stm32g030f6-examples
         run: cargo check --bins --target thumbv6m-none-eabi
 
+      - name: STM32 format check
+        working-directory: embassy-stm32g030f6-examples
+        run: cargo fmt --check
+
+      - name: STM32 clippy
+        working-directory: embassy-stm32g030f6-examples
+        run: cargo clippy --bins --target thumbv6m-none-eabi -- -D warnings
+
   coverage:
     runs-on: ubuntu-latest
 
