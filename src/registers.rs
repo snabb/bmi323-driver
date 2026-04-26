@@ -30,6 +30,9 @@ pub(crate) const INT_MAP2: u8 = 0x3B;
 pub(crate) const FEATURE_CTRL: u8 = 0x40;
 pub(crate) const FEATURE_DATA_ADDR: u8 = 0x41;
 pub(crate) const FEATURE_DATA_TX: u8 = 0x42;
+pub(crate) const INT_STATUS_INT1: u8 = 0x0D;
+pub(crate) const INT_STATUS_INT2: u8 = 0x0E;
+pub(crate) const INT_STATUS_IBI: u8 = 0x0F;
 pub(crate) const CMD: u8 = 0x7E;
 
 pub(crate) const EXT_GEN_SET_1: u16 = 0x02;
