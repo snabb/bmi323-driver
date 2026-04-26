@@ -590,9 +590,9 @@ impl From<InterruptRoute> for u16 {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ActiveLevel {
     /// Active-low signaling.
-    Low,
+    Low = 0,
     /// Active-high signaling.
-    High,
+    High = 1,
 }
 
 /// Electrical driver mode for an interrupt output pin.
@@ -600,9 +600,9 @@ pub enum ActiveLevel {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum OutputMode {
     /// Push-pull output driver.
-    PushPull,
+    PushPull = 0,
     /// Open-drain output driver.
-    OpenDrain,
+    OpenDrain = 1,
 }
 
 /// Electrical configuration for `INT1` or `INT2`.
