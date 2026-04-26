@@ -7,7 +7,8 @@ use crate::registers::{
     EXT_SC_1, EXT_SIGMO_1, EXT_SIGMO_2, EXT_SIGMO_3, EXT_ST_RESULT, EXT_ST_SELECT, EXT_TAP_1,
     EXT_TAP_2, EXT_TAP_3, EXT_TILT_1, EXT_TILT_2, FEATURE_CTRL, FEATURE_DATA_ADDR, FEATURE_DATA_TX,
     FEATURE_IO_STATUS, FEATURE_IO0, FEATURE_IO1, FEATURE_IO2, FEATURE_IO3, FIFO_CONF, FIFO_CTRL,
-    FIFO_DATA, FIFO_FILL_LEVEL, FIFO_WATERMARK, GYR_CONF, GYR_DATA_X, INT_CONF, IO_INT_CTRL,
+    FIFO_DATA, FIFO_FILL_LEVEL, FIFO_WATERMARK,     GYR_CONF, GYR_DATA_X, INT_CONF, INT_STATUS_IBI, INT_STATUS_INT1, INT_STATUS_INT2,
+    IO_INT_CTRL,
     SELF_TEST, SENSOR_TIME_0, SOFT_RESET, STATUS, TEMP_DATA, TransportKind, interrupt_map_location,
     words_to_axis,
 };
@@ -271,9 +272,9 @@ where
         channel: InterruptChannel,
     ) -> Result<InterruptStatus, Error<<Self as SyncAccess>::BusError>> {
         let reg = match channel {
-            InterruptChannel::Int1 => 0x0D,
-            InterruptChannel::Int2 => 0x0E,
-            InterruptChannel::Ibi => 0x0F,
+            InterruptChannel::Int1 => INT_STATUS_INT1,
+            InterruptChannel::Int2 => INT_STATUS_INT2,
+            InterruptChannel::Ibi => INT_STATUS_IBI,
         };
         self.read_word(reg).map(InterruptStatus).map_err(Error::Bus)
     }
