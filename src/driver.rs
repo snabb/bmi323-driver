@@ -1,4 +1,5 @@
 use core::cell::Cell;
+use core::fmt;
 use core::marker::PhantomData;
 
 use embedded_hal::i2c::I2c;
@@ -21,15 +22,14 @@ pub struct Bmi323<T> {
     pub(crate) gyro_range: GyroRange,
 }
 
-/// Async BMI323 driver.
-///
-/// Create this with [`Bmi323Async::new_i2c`] or [`Bmi323Async::new_spi`].
-pub struct Bmi323Async<T> {
-    pub(crate) transport: T,
-    pub(crate) kind: TransportKind,
-    pub(crate) accel_range: AccelRange,
-    pub(crate) gyro_range: GyroRange,
-    pub(crate) _not_sync: PhantomData<Cell<()>>,
+impl<T> fmt::Debug for Bmi323<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Bmi323")
+            .field("kind", &self.kind)
+            .field("accel_range", &self.accel_range)
+            .field("gyro_range", &self.gyro_range)
+            .finish_non_exhaustive()
+    }
 }
 
 impl<I2C> Bmi323<SyncI2cTransport<I2C>>
@@ -71,6 +71,27 @@ where
     /// Consume the driver and return ownership of the underlying SPI device.
     pub fn destroy(self) -> SPI {
         self.transport.bus
+    }
+}
+
+/// Async BMI323 driver.
+///
+/// Create this with [`Bmi323Async::new_i2c`] or [`Bmi323Async::new_spi`].
+pub struct Bmi323Async<T> {
+    pub(crate) transport: T,
+    pub(crate) kind: TransportKind,
+    pub(crate) accel_range: AccelRange,
+    pub(crate) gyro_range: GyroRange,
+    pub(crate) _not_sync: PhantomData<Cell<()>>,
+}
+
+impl<T> fmt::Debug for Bmi323Async<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Bmi323Async")
+            .field("kind", &self.kind)
+            .field("accel_range", &self.accel_range)
+            .field("gyro_range", &self.gyro_range)
+            .finish_non_exhaustive()
     }
 }
 

@@ -527,7 +527,7 @@ impl GyroConfig {
 }
 
 /// FIFO enable and behavior configuration.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct FifoConfig {
     /// Stop writing new data once the FIFO is full.
@@ -540,18 +540,6 @@ pub struct FifoConfig {
     pub include_gyro: bool,
     /// Include temperature samples in FIFO output.
     pub include_temperature: bool,
-}
-
-impl Default for FifoConfig {
-    fn default() -> Self {
-        Self {
-            stop_on_full: false,
-            include_time: false,
-            include_accel: false,
-            include_gyro: false,
-            include_temperature: false,
-        }
-    }
 }
 
 impl FifoConfig {
