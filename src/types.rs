@@ -315,7 +315,7 @@ pub struct ImuData {
 
 /// Result returned by [`Bmi323::init`](crate::Bmi323::init) and
 /// [`Bmi323Async::init`](crate::Bmi323Async::init).
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct DeviceState {
     /// Value read from the `CHIP_ID` register.
