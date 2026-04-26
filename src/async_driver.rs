@@ -361,7 +361,7 @@ where
         &mut self,
         words: &mut [u16],
     ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
-        assert!(
+        debug_assert!(
             words.len() <= 64,
             "read_fifo_words: words.len() must not exceed 64"
         );
