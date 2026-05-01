@@ -280,11 +280,16 @@ where
     }
 
     /// Configure FIFO contents and watermark level.
+    ///
+    /// `watermark_words` is the interrupt threshold in 16-bit words. The BMI323
+    /// FIFO_WATERMARK register is 10 bits wide, so values are clamped to
+    /// `0..=1023`. Values above 1023 are silently truncated to 1023.
     pub fn set_fifo_config(
         &mut self,
         config: FifoConfig,
         watermark_words: u16,
     ) -> Result<(), Error<<Self as SyncAccess>::BusError>> {
+        // FIFO_WATERMARK is a 10-bit field (datasheet §6.11.17)
         self.write_word(FIFO_WATERMARK, watermark_words & 0x03FF)
             .map_err(Error::Bus)?;
         self.write_word(FIFO_CONF, config.to_word())
