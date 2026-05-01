@@ -60,8 +60,20 @@ pub(crate) const EXT_ST_RESULT: u16 = 0x24;
 pub(crate) const EXT_ST_SELECT: u16 = 0x25;
 
 pub(crate) const BMI323_CHIP_ID: u8 = 0x43;
+/// Soft-reset opcode written to CMD (datasheet §6.11.37).
 pub(crate) const SOFT_RESET: u16 = 0xDEAF;
+/// Self-test trigger opcode written to CMD (datasheet §6.11.37).
 pub(crate) const SELF_TEST: u16 = 0x0100;
+
+/// Feature-engine configuration payload written to FEATURE_IO2 during init
+/// (datasheet §4.5, feature-engine init sequence).
+pub(crate) const FEATURE_ENGINE_CONFIG: u16 = 0x012C;
+/// Sync trigger written to FEATURE_IO_STATUS after FEATURE_IO2 is set
+/// (datasheet §4.5, feature-engine init sequence).
+pub(crate) const FEATURE_IO_STATUS_SYNC: u16 = 0x0001;
+/// Feature-engine enable bit written to FEATURE_CTRL
+/// (datasheet §6.11.25).
+pub(crate) const FEATURE_CTRL_ENABLE: u16 = 0x0001;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum TransportKind {
