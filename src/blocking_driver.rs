@@ -155,7 +155,7 @@ where
     /// Return the last accelerometer range configured through this driver.
     ///
     /// Before any explicit accelerometer configuration, this returns the
-    /// driver's local startup value of `AccelRange::G8`.
+    /// driver's local startup value of `AccelRange::G2` (matches the BMI323 POR default).
     pub fn accel_range(&self) -> crate::AccelRange {
         self.accel_range
     }
@@ -163,7 +163,7 @@ where
     /// Return the last gyroscope range configured through this driver.
     ///
     /// Before any explicit gyroscope configuration, this returns the driver's
-    /// local startup value of `GyroRange::Dps2000`.
+    /// local startup value of `GyroRange::Dps125` (matches the BMI323 POR default).
     pub fn gyro_range(&self) -> crate::GyroRange {
         self.gyro_range
     }
