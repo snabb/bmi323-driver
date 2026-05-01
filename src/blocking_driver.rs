@@ -68,6 +68,7 @@ where
         delay: &mut D,
     ) -> Result<(), Error<<Self as SyncAccess>::BusError>> {
         self.write_word(CMD, SOFT_RESET).map_err(Error::Bus)?;
+        // Datasheet Table 3: t_start = 2 ms typical after reset.
         delay.delay_ms(2);
         Ok(())
     }
