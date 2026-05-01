@@ -71,6 +71,7 @@ where
         delay: &mut D,
     ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
         self.write_word(CMD, SOFT_RESET).await.map_err(Error::Bus)?;
+        // Datasheet Table 3: t_start = 2 ms typical after reset.
         delay.delay_ms(2).await;
         Ok(())
     }
