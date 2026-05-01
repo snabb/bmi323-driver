@@ -121,8 +121,11 @@ impl InterruptStatus {
     pub const fn i3c_sync(self) -> bool {
         self.0 & (1 << 9) != 0
     }
-    /// Returns true if the feature-engine status interrupt is asserted.
-    pub const fn feature_status(self) -> bool {
+    /// Returns true if the error-status interrupt is asserted.
+    ///
+    /// This bit corresponds to `err_status` in the BMI323 `INT_STATUS_INT1/2/IBI`
+    /// register (bit 10). It is mapped via [`InterruptSource::ErrorStatus`].
+    pub const fn error_status(self) -> bool {
         self.0 & (1 << 10) != 0
     }
     /// Returns true if temperature data-ready is asserted.
@@ -645,8 +648,8 @@ pub enum InterruptSource {
     Tap,
     /// I3C synchronization interrupt.
     I3cSync,
-    /// Feature-engine status interrupt.
-    FeatureStatus,
+    /// Error-status interrupt (`err_status` in the BMI323 datasheet).
+    ErrorStatus,
     /// Temperature data-ready interrupt.
     TempDataReady,
     /// Gyroscope data-ready interrupt.

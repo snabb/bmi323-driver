@@ -101,7 +101,7 @@ pub(crate) const fn interrupt_map_location(source: InterruptSource) -> (u8, u8) 
         InterruptSource::Tilt => (INT_MAP1, 14),
         InterruptSource::Tap => (INT_MAP2, 0),
         InterruptSource::I3cSync => (INT_MAP2, 2),
-        InterruptSource::FeatureStatus => (INT_MAP2, 4),
+        InterruptSource::ErrorStatus => (INT_MAP2, 4),
         InterruptSource::TempDataReady => (INT_MAP2, 6),
         InterruptSource::GyroDataReady => (INT_MAP2, 8),
         InterruptSource::AccelDataReady => (INT_MAP2, 10),
