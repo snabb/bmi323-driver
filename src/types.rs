@@ -117,6 +117,10 @@ impl InterruptStatus {
     pub const fn tap(self) -> bool {
         self.0 & (1 << 8) != 0
     }
+    /// Returns true if the I3C synchronization interrupt is asserted.
+    pub const fn i3c_sync(self) -> bool {
+        self.0 & (1 << 9) != 0
+    }
     /// Returns true if the feature-engine status interrupt is asserted.
     pub const fn feature_status(self) -> bool {
         self.0 & (1 << 10) != 0
