@@ -6,11 +6,12 @@ use crate::registers::{
     CHIP_ID, CMD, ERR_REG, EXT_ALT_CONFIG_CHG, EXT_ANYMO_1, EXT_ANYMO_2, EXT_ANYMO_3, EXT_FLAT_1,
     EXT_FLAT_2, EXT_GEN_SET_1, EXT_NOMO_1, EXT_NOMO_2, EXT_NOMO_3, EXT_ORIENT_1, EXT_ORIENT_2,
     EXT_SC_1, EXT_SIGMO_1, EXT_SIGMO_2, EXT_SIGMO_3, EXT_ST_RESULT, EXT_ST_SELECT, EXT_TAP_1,
-    EXT_TAP_2, EXT_TAP_3, EXT_TILT_1, EXT_TILT_2, FEATURE_CTRL, FEATURE_DATA_ADDR, FEATURE_DATA_TX,
-    FEATURE_IO_STATUS, FEATURE_IO0, FEATURE_IO1, FEATURE_IO2, FEATURE_IO3, FIFO_CONF, FIFO_CTRL,
-    FIFO_DATA, FIFO_FILL_LEVEL, FIFO_WATERMARK, GYR_CONF, GYR_DATA_X, INT_CONF, INT_STATUS_IBI,
-    INT_STATUS_INT1, INT_STATUS_INT2, IO_INT_CTRL, SELF_TEST, SENSOR_TIME_0, SOFT_RESET, STATUS,
-    TEMP_DATA, TransportKind, interrupt_map_location, words_to_axis,
+    EXT_TAP_2, EXT_TAP_3, EXT_TILT_1, EXT_TILT_2, FEATURE_CTRL, FEATURE_CTRL_ENABLE,
+    FEATURE_DATA_ADDR, FEATURE_DATA_TX, FEATURE_ENGINE_CONFIG, FEATURE_IO_STATUS,
+    FEATURE_IO_STATUS_SYNC, FEATURE_IO0, FEATURE_IO1, FEATURE_IO2, FEATURE_IO3, FIFO_CONF,
+    FIFO_CTRL, FIFO_DATA, FIFO_FILL_LEVEL, FIFO_WATERMARK, GYR_CONF, GYR_DATA_X, INT_CONF,
+    INT_STATUS_IBI, INT_STATUS_INT1, INT_STATUS_INT2, IO_INT_CTRL, SELF_TEST, SENSOR_TIME_0,
+    SOFT_RESET, STATUS, TEMP_DATA, TransportKind, interrupt_map_location, words_to_axis,
 };
 use crate::{
     AccelConfig, ActiveLevel, AltAccelConfig, AltConfigControl, AltGyroConfig, AltStatus,
@@ -379,13 +380,13 @@ where
     ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
         self.write_word(ACC_CONF, 0).await.map_err(Error::Bus)?;
         self.write_word(GYR_CONF, 0).await.map_err(Error::Bus)?;
-        self.write_word(FEATURE_IO2, 0x012C)
+        self.write_word(FEATURE_IO2, FEATURE_ENGINE_CONFIG)
             .await
             .map_err(Error::Bus)?;
-        self.write_word(FEATURE_IO_STATUS, 0x0001)
+        self.write_word(FEATURE_IO_STATUS, FEATURE_IO_STATUS_SYNC)
             .await
             .map_err(Error::Bus)?;
-        self.write_word(FEATURE_CTRL, 0x0001)
+        self.write_word(FEATURE_CTRL, FEATURE_CTRL_ENABLE)
             .await
             .map_err(Error::Bus)?;
 
