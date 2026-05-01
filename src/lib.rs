@@ -72,9 +72,10 @@
 //! [`Bmi323::set_gyro_config`] or their async equivalents before relying on
 //! accelerometer or gyroscope sample reads.
 //!
-//! The driver tracks local range fields initialized to `AccelRange::G8` and
-//! `GyroRange::Dps2000`, but those are only fallback bookkeeping values until
-//! you explicitly configure the sensor through the driver.
+//! The driver tracks local range fields initialized to `AccelRange::G2` and
+//! `GyroRange::Dps125` to match the BMI323 power-on reset defaults
+//! (`ACC_CONF`/`GYR_CONF` = `0x0000`). These bookkeeping values only produce
+//! correct physical conversions after you explicitly configure the sensor.
 //!
 //! # Example: blocking I2C
 //!

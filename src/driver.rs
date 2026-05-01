@@ -41,8 +41,8 @@ where
         Self {
             transport: SyncI2cTransport { bus: i2c, address },
             kind: TransportKind::I2c,
-            accel_range: AccelRange::G8,
-            gyro_range: GyroRange::Dps2000,
+            accel_range: AccelRange::G2,
+            gyro_range: GyroRange::Dps125,
         }
     }
 
@@ -61,8 +61,8 @@ where
         Self {
             transport: SyncSpiTransport { bus: spi },
             kind: TransportKind::Spi,
-            accel_range: AccelRange::G8,
-            gyro_range: GyroRange::Dps2000,
+            accel_range: AccelRange::G2,
+            gyro_range: GyroRange::Dps125,
         }
     }
 
@@ -103,8 +103,8 @@ where
         Self {
             transport: AsyncI2cTransport { bus: i2c, address },
             kind: TransportKind::I2c,
-            accel_range: AccelRange::G8,
-            gyro_range: GyroRange::Dps2000,
+            accel_range: AccelRange::G2,
+            gyro_range: GyroRange::Dps125,
         }
     }
 
@@ -123,8 +123,8 @@ where
         Self {
             transport: AsyncSpiTransport { bus: spi },
             kind: TransportKind::Spi,
-            accel_range: AccelRange::G8,
-            gyro_range: GyroRange::Dps2000,
+            accel_range: AccelRange::G2,
+            gyro_range: GyroRange::Dps125,
         }
     }
 
