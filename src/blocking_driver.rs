@@ -733,7 +733,6 @@ where
         self.write_word(CMD, SELF_TEST).map_err(Error::Bus)?;
 
         for _ in 0..50 {
-            delay.delay_ms(10);
             let feature_io1 = self.read_word(FEATURE_IO1).map_err(Error::Bus)?;
             if feature_io1 & (1 << 4) != 0 {
                 let detail = SelfTestDetail(self.read_feature_word(EXT_ST_RESULT)?);
@@ -745,6 +744,7 @@ where
                     detail,
                 });
             }
+            delay.delay_ms(10);
         }
 
         Err(Error::SelfTestTimeout)
