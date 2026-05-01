@@ -345,7 +345,7 @@ fn interrupt_status_decodes_all_bits() {
     assert!(InterruptStatus(1 << 7).tilt());
     assert!(InterruptStatus(1 << 8).tap());
     assert!(InterruptStatus(1 << 9).i3c_sync());
-    assert!(InterruptStatus(1 << 10).feature_status());
+    assert!(InterruptStatus(1 << 10).error_status());
     assert!(InterruptStatus(1 << 11).temp_data_ready());
     assert!(InterruptStatus(1 << 12).gyro_data_ready());
     assert!(InterruptStatus(1 << 13).accel_data_ready());
@@ -362,7 +362,7 @@ fn interrupt_status_decodes_all_bits() {
     assert!(!none.tilt());
     assert!(!none.tap());
     assert!(!none.i3c_sync());
-    assert!(!none.feature_status());
+    assert!(!none.error_status());
     assert!(!none.temp_data_ready());
     assert!(!none.gyro_data_ready());
     assert!(!none.accel_data_ready());
@@ -428,7 +428,7 @@ fn interrupt_map_location_covers_remaining_sources() {
         (INT_MAP2, 2)
     );
     assert_eq!(
-        interrupt_map_location(InterruptSource::FeatureStatus),
+        interrupt_map_location(InterruptSource::ErrorStatus),
         (INT_MAP2, 4)
     );
     assert_eq!(
