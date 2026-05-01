@@ -350,20 +350,22 @@ where
 
     /// Read raw FIFO words into the provided output slice.
     ///
-    /// `words.len()` must not exceed 64 due to the fixed internal transfer
-    /// buffer. Use [`fifo_fill_level`](Self::fifo_fill_level) first and split
-    /// larger reads into chunks of at most 64 words.
+    /// `words.len()` must not exceed [`MAX_WORDS_PER_READ`] due to the fixed
+    /// internal transfer buffer. Use [`fifo_fill_level`](Self::fifo_fill_level)
+    /// first and split larger reads into chunks of at most that size.
     ///
     /// # Panics
     ///
-    /// Panics if `words.len() > 64`.
+    /// Panics if `words.len() > MAX_WORDS_PER_READ`.
     pub async fn read_fifo_words(
         &mut self,
         words: &mut [u16],
     ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
-        debug_assert!(
-            words.len() <= 64,
-            "read_fifo_words: words.len() must not exceed 64"
+        assert!(
+            words.len() <= crate::MAX_WORDS_PER_READ,
+            "read_fifo_words: words.len() ({}) must not exceed MAX_WORDS_PER_READ ({})",
+            words.len(),
+            crate::MAX_WORDS_PER_READ,
         );
         self.read_words(FIFO_DATA, words).await.map_err(Error::Bus)
     }

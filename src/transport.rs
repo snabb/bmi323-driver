@@ -5,6 +5,12 @@ use embedded_hal_async::spi::SpiDevice as AsyncSpiDevice;
 
 use crate::{Bmi323, Bmi323Async};
 
+/// Maximum number of 16-bit words that a single `read_words` call may request.
+///
+/// Limited by the internal transfer scratch buffer. Callers that need more
+/// data must split the request into chunks of at most this size.
+pub const MAX_WORDS_PER_READ: usize = 64;
+
 /// Blocking I2C transport wrapper used by [`Bmi323`].
 ///
 /// Most users do not need to construct this directly. Prefer
@@ -98,7 +104,8 @@ where
     }
 
     fn read_words(&mut self, reg: u8, words: &mut [u16]) -> Result<(), Self::BusError> {
-        let mut bytes = [0u8; 2 * 64 + 2];
+        // 2 dummy bytes + 2 bytes per word
+        let mut bytes = [0u8; 2 + MAX_WORDS_PER_READ * 2];
         let byte_len = words.len() * 2 + 2;
         self.transport
             .bus
@@ -133,7 +140,8 @@ where
 
     fn read_words(&mut self, reg: u8, words: &mut [u16]) -> Result<(), Self::BusError> {
         let cmd = 0x80 | (reg & 0x7F);
-        let mut bytes = [0u8; 2 * 64 + 1];
+        // 1 dummy byte + 2 bytes per word
+        let mut bytes = [0u8; 1 + MAX_WORDS_PER_READ * 2];
         let byte_len = words.len() * 2 + 1;
         let mut ops = [
             Operation::Write(&[cmd]),
@@ -172,7 +180,8 @@ where
     }
 
     async fn read_words(&mut self, reg: u8, words: &mut [u16]) -> Result<(), Self::BusError> {
-        let mut bytes = [0u8; 2 * 64 + 2];
+        // 2 dummy bytes + 2 bytes per word
+        let mut bytes = [0u8; 2 + MAX_WORDS_PER_READ * 2];
         let byte_len = words.len() * 2 + 2;
         self.transport
             .bus
@@ -208,7 +217,8 @@ where
 
     async fn read_words(&mut self, reg: u8, words: &mut [u16]) -> Result<(), Self::BusError> {
         let cmd = 0x80 | (reg & 0x7F);
-        let mut bytes = [0u8; 2 * 64 + 1];
+        // 1 dummy byte + 2 bytes per word
+        let mut bytes = [0u8; 1 + MAX_WORDS_PER_READ * 2];
         let byte_len = words.len() * 2 + 1;
         let mut ops = [
             Operation::Write(&[cmd]),

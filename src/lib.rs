@@ -189,8 +189,8 @@ mod types;
 
 pub use driver::{Bmi323, Bmi323Async};
 pub use transport::{
-    AsyncAccess, AsyncI2cTransport, AsyncSpiTransport, SyncAccess, SyncI2cTransport,
-    SyncSpiTransport,
+    AsyncAccess, AsyncI2cTransport, AsyncSpiTransport, MAX_WORDS_PER_READ, SyncAccess,
+    SyncI2cTransport, SyncSpiTransport,
 };
 pub use types::*;
 
