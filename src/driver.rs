@@ -1,6 +1,4 @@
-use core::cell::Cell;
 use core::fmt;
-use core::marker::PhantomData;
 
 use embedded_hal::i2c::I2c;
 use embedded_hal::spi::SpiDevice;
@@ -82,7 +80,6 @@ pub struct Bmi323Async<T> {
     pub(crate) kind: TransportKind,
     pub(crate) accel_range: AccelRange,
     pub(crate) gyro_range: GyroRange,
-    pub(crate) _not_sync: PhantomData<Cell<()>>,
 }
 
 impl<T> fmt::Debug for Bmi323Async<T> {
@@ -108,7 +105,6 @@ where
             kind: TransportKind::I2c,
             accel_range: AccelRange::G8,
             gyro_range: GyroRange::Dps2000,
-            _not_sync: PhantomData::<Cell<()>>,
         }
     }
 
@@ -129,7 +125,6 @@ where
             kind: TransportKind::Spi,
             accel_range: AccelRange::G8,
             gyro_range: GyroRange::Dps2000,
-            _not_sync: PhantomData::<Cell<()>>,
         }
     }
 
