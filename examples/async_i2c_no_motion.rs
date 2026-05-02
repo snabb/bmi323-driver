@@ -22,7 +22,7 @@ where
 
     imu.init(delay).await?;
 
-    imu.enable_feature_engine().await?;
+    imu.enable_feature_engine(delay).await?;
     imu.set_accel_config(AccelConfig {
         average: AverageSamples::Avg2,
         odr: OutputDataRate::Hz50,
