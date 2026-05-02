@@ -212,7 +212,7 @@ where
         &mut self,
     ) -> Result<f32, Error<<Self as SyncAccess>::BusError>> {
         let raw = self.read_word(TEMP_DATA).map_err(Error::Bus)? as i16;
-        Ok(raw as f32 / 512.0 + 23.0)
+        crate::driver::temperature_raw_to_celsius(raw)
     }
 
     /// Read the 24-bit sensor time counter.

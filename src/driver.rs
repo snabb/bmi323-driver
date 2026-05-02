@@ -6,6 +6,7 @@ use embedded_hal_async::i2c::I2c as AsyncI2c;
 use embedded_hal_async::spi::SpiDevice as AsyncSpiDevice;
 
 use crate::registers::TransportKind;
+use crate::types::Error;
 use crate::{
     AccelRange, AsyncI2cTransport, AsyncSpiTransport, GyroRange, SyncI2cTransport, SyncSpiTransport,
 };
@@ -132,4 +133,15 @@ where
     pub fn destroy(self) -> SPI {
         self.transport.bus
     }
+}
+
+/// Convert a raw TEMP_DATA register value to degrees Celsius.
+///
+/// Returns `Err(Error::InvalidTemperature)` when the raw value is 0x8000,
+/// the BMI323 "invalid temperature" sentinel (datasheet §5.9).
+pub(crate) fn temperature_raw_to_celsius<E>(raw: i16) -> Result<f32, Error<E>> {
+    if raw == i16::MIN {
+        return Err(Error::InvalidTemperature);
+    }
+    Ok(raw as f32 / 512.0 + 23.0)
 }

@@ -12,6 +12,11 @@ pub enum Error<E> {
     FeatureEngineNotReady(u8),
     /// The BMI323 self-test did not complete within the expected timeout.
     SelfTestTimeout,
+    /// The temperature sensor returned the invalid-data sentinel (0x8000).
+    ///
+    /// The BMI323 datasheet defines raw value 0x8000 as "invalid temperature";
+    /// it is produced when no valid sample is available yet.
+    InvalidTemperature,
 }
 
 /// Primary 7-bit BMI323 I2C address.

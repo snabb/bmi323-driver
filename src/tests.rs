@@ -1,3 +1,4 @@
+use crate::driver::temperature_raw_to_celsius;
 use crate::registers::{INT_MAP1, INT_MAP2, interrupt_map_location};
 use crate::*;
 
@@ -492,4 +493,24 @@ fn significant_motion_block_size_to_seconds_and_interrupt_hold() {
 fn tilt_interrupt_hold_delegates_correctly() {
     assert_eq!(TiltConfig::interrupt_hold_from_millis(10.0), 4);
     assert!((TiltConfig::interrupt_hold_to_millis(4) - 10.0).abs() < 1e-4);
+}
+
+// Datasheet §5.9: raw 0x8000 is "invalid temperature"; 0x0000 maps to 23 °C.
+#[test]
+fn temperature_sentinel_returns_error() {
+    let result: Result<f32, Error<()>> = temperature_raw_to_celsius(i16::MIN);
+    assert_eq!(result, Err(Error::InvalidTemperature));
+}
+
+#[test]
+fn temperature_zero_raw_is_23_celsius() {
+    let result: Result<f32, Error<()>> = temperature_raw_to_celsius(0);
+    assert!((result.unwrap() - 23.0).abs() < 1e-5);
+}
+
+#[test]
+fn temperature_raw_512_is_24_celsius() {
+    // 512 / 512.0 + 23.0 = 24.0
+    let result: Result<f32, Error<()>> = temperature_raw_to_celsius(512);
+    assert!((result.unwrap() - 24.0).abs() < 1e-5);
 }
