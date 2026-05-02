@@ -188,8 +188,9 @@ fn enable_feature_engine_uses_expected_register_sequence() {
     ];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
+    let mut delay = TestDelay::default();
 
-    imu.enable_feature_engine().unwrap();
+    imu.enable_feature_engine(&mut delay).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -387,7 +388,10 @@ fn run_self_test_uses_expected_i2c_sequence_and_restores_configuration() {
     assert!(!result.sample_rate_error);
     assert_eq!(result.error_status, 5);
     assert!(result.gyroscope_ok());
-    assert!(delay.ms_calls.iter().any(|&ms| ms == 10));
+    // Mock returns ready on first poll so no 10 ms self-test delays are issued;
+    // only the 200 µs inter-poll delays from enable_feature_engine are observed.
+    assert!(delay.us_calls.iter().any(|&us| us == 200));
+    assert!(delay.ms_calls.is_empty());
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -1104,8 +1108,9 @@ fn enable_feature_engine_returns_error_when_never_ready() {
     expectations.push(read_word(FEATURE_IO1, 0x0002));
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
+    let mut delay = TestDelay::default();
 
-    let result = imu.enable_feature_engine();
+    let result = imu.enable_feature_engine(&mut delay);
 
     assert!(matches!(
         result,

@@ -202,7 +202,9 @@ fn async_spi_self_test_uses_expected_sequence_and_restores_configuration() {
 
     let spi = SpiMock::new(&expectations);
     let mut imu = Bmi323Async::new_spi(spi);
-    let mut delay = CheckedDelay::new(&[DelayTransaction::async_delay_ms(10)]);
+    // enable_feature_engine polls once (returns ready) before the self-test loop,
+    // which also returns on first read; so only 1 inter-poll delay is observed.
+    let mut delay = CheckedDelay::new(&[DelayTransaction::async_delay_us(200)]);
 
     let result = block_on(imu.run_self_test(&mut delay, SelfTestSelection::Gyroscope)).unwrap();
 

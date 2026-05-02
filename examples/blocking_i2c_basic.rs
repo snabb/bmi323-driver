@@ -16,7 +16,7 @@ where
 
     imu.init(delay)?;
 
-    imu.enable_feature_engine()?;
+    imu.enable_feature_engine(delay)?;
 
     imu.configure_any_motion(AnyMotionConfig {
         axes: MotionAxes::XYZ,

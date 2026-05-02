@@ -20,7 +20,7 @@ where
     let mut imu = Bmi323Async::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
 
     imu.init(delay).await?;
-    imu.enable_feature_engine().await?;
+    imu.enable_feature_engine(delay).await?;
 
     imu.set_accel_config(AccelConfig {
         odr: OutputDataRate::Hz100,

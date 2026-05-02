@@ -22,7 +22,7 @@ where
 
     imu.init(delay).await?;
 
-    imu.enable_feature_engine().await?;
+    imu.enable_feature_engine(delay).await?;
     imu.set_accel_config(AccelConfig {
         mode: bmi323_driver::AccelMode::LowPower,
         average: AverageSamples::Avg2,

@@ -218,8 +218,9 @@ fn spi_feature_engine_enable_uses_expected_transaction_sequence() {
 
     let spi = SpiMock::new(&expectations);
     let mut imu = Bmi323::new_spi(spi);
+    let mut delay = TestDelay::default();
 
-    imu.enable_feature_engine().unwrap();
+    imu.enable_feature_engine(&mut delay).unwrap();
 
     let mut spi = imu.destroy();
     spi.done();
@@ -267,7 +268,10 @@ fn spi_self_test_uses_expected_sequence_and_restores_configuration() {
     assert!(result.passed);
     assert!(result.accelerometer_ok());
     assert!(result.gyroscope_ok());
-    assert_eq!(delay.ms_calls.iter().filter(|&&ms| ms == 10).count(), 1);
+    // Mock returns ready on first poll so no 10 ms self-test delays are issued;
+    // only the 200 µs inter-poll delays from enable_feature_engine are observed.
+    assert!(delay.us_calls.iter().any(|&us| us == 200));
+    assert!(delay.ms_calls.is_empty());
 
     let mut spi = imu.destroy();
     spi.done();

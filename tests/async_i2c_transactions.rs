@@ -201,8 +201,9 @@ fn async_i2c_enable_feature_engine_uses_expected_register_sequence() {
     ];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323Async::new_i2c(i2c, ADDR);
+    let mut delay = NoopDelay::new();
 
-    block_on(imu.enable_feature_engine()).unwrap();
+    block_on(imu.enable_feature_engine(&mut delay)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -389,7 +390,9 @@ fn async_i2c_self_test_uses_expected_sequence_and_restores_configuration() {
     ];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323Async::new_i2c(i2c, ADDR);
-    let mut delay = CheckedDelay::new(&[DelayTransaction::async_delay_ms(10)]);
+    // enable_feature_engine polls once (returns ready) before the self-test loop,
+    // which also returns on first read; so only 1 inter-poll delay is observed.
+    let mut delay = CheckedDelay::new(&[DelayTransaction::async_delay_us(200)]);
 
     let result = block_on(imu.run_self_test(&mut delay, SelfTestSelection::Gyroscope)).unwrap();
 
@@ -1051,7 +1054,9 @@ fn async_i2c_run_self_test_returns_restore_error_when_restore_configuration_fail
     ];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323Async::new_i2c(i2c, ADDR);
-    let mut delay = CheckedDelay::new(&[DelayTransaction::async_delay_ms(10)]);
+    // enable_feature_engine polls once (returns ready) before the self-test loop,
+    // which also returns on first read; so only 1 inter-poll delay is observed.
+    let mut delay = CheckedDelay::new(&[DelayTransaction::async_delay_us(200)]);
 
     let result = block_on(imu.run_self_test(&mut delay, SelfTestSelection::Gyroscope));
 
@@ -1076,13 +1081,18 @@ fn async_i2c_enable_feature_engine_returns_error_when_never_ready() {
     expectations.push(read_word(FEATURE_IO1, 0x0002));
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323Async::new_i2c(i2c, ADDR);
+    let delay_transactions: Vec<_> = (0..32)
+        .map(|_| DelayTransaction::async_delay_us(200))
+        .collect();
+    let mut delay = CheckedDelay::new(&delay_transactions);
 
-    let result = block_on(imu.enable_feature_engine());
+    let result = block_on(imu.enable_feature_engine(&mut delay));
 
     assert!(matches!(
         result,
         Err(bmi323_driver::Error::FeatureEngineNotReady(2))
     ));
+    delay.done();
     let mut i2c = imu.destroy();
     i2c.done();
 }
@@ -1110,8 +1120,8 @@ fn async_i2c_run_self_test_accelerometer_selection_times_out_when_feature_never_
         write_word(FEATURE_DATA_TX, 0x0001), // Accelerometer.to_word()
         write_word(CMD, 0x0100),             // SELF_TEST
     ];
-    // 50 poll iterations: bit 4 never set
-    let mut delay_transactions = vec![];
+    // enable_feature_engine: 1 poll before ready, plus 50 self-test poll iterations
+    let mut delay_transactions = vec![DelayTransaction::async_delay_us(200)];
     for _ in 0..50 {
         delay_transactions.push(DelayTransaction::async_delay_ms(10));
         expectations.push(read_word(FEATURE_IO1, 0x0000));

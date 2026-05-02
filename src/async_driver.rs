@@ -383,8 +383,9 @@ where
     /// After calling this method, re-configure the sensors with
     /// [`set_accel_config`](Self::set_accel_config) and
     /// [`set_gyro_config`](Self::set_gyro_config) before reading samples.
-    pub async fn enable_feature_engine(
+    pub async fn enable_feature_engine<D: AsyncDelayNs>(
         &mut self,
+        delay: &mut D,
     ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
         self.write_word(ACC_CONF, 0).await.map_err(Error::Bus)?;
         self.write_word(GYR_CONF, 0).await.map_err(Error::Bus)?;
@@ -399,6 +400,9 @@ where
             .map_err(Error::Bus)?;
 
         for _ in 0..32 {
+            // Give the feature engine time to transition; without this delay a
+            // fast SPI bus can exhaust all polls before the engine reaches ready.
+            delay.delay_us(200).await;
             let io1 = self.read_word(FEATURE_IO1).await.map_err(Error::Bus)?;
             let status = (io1 & 0x000F) as u8;
             if status == 0x1 || status == 0x5 {
@@ -815,7 +819,7 @@ where
         delay: &mut D,
         selection: SelfTestSelection,
     ) -> Result<SelfTestResult, Error<<Self as AsyncAccess>::BusError>> {
-        self.enable_feature_engine().await?;
+        self.enable_feature_engine(delay).await?;
 
         if selection.tests_gyroscope() {
             self.write_word(

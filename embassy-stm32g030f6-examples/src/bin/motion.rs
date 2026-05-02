@@ -52,7 +52,7 @@ async fn main(_spawner: Spawner) {
         }
     }
 
-    if let Err(err) = imu.enable_feature_engine().await {
+    if let Err(err) = imu.enable_feature_engine(&mut delay).await {
         error!("BMI323 feature engine enable failed: {:?}", err);
         loop {
             cortex_m::asm::wfi();
