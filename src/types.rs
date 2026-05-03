@@ -417,6 +417,9 @@ pub enum AccelRange {
 
 impl AccelRange {
     /// Scale factor in `g/LSB` for raw accelerometer samples.
+    ///
+    /// Raw samples are 16-bit two's complement with full-scale ±range at ±32768
+    /// (§5.6.1).
     pub const fn scale_g_per_lsb(self) -> f32 {
         match self {
             Self::G2 => 2.0 / 32768.0,
@@ -440,6 +443,9 @@ pub enum GyroRange {
 
 impl GyroRange {
     /// Scale factor in `deg/s per LSB` for raw gyroscope samples.
+    ///
+    /// Raw samples are 16-bit two's complement with full-scale ±range at ±32768
+    /// (§5.6.2).
     pub const fn scale_dps_per_lsb(self) -> f32 {
         match self {
             Self::Dps125 => 125.0 / 32768.0,

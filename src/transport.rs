@@ -104,7 +104,7 @@ where
     }
 
     fn read_words(&mut self, reg: u8, words: &mut [u16]) -> Result<(), Self::BusError> {
-        // 2 dummy bytes + 2 bytes per word
+        // 2 dummy bytes precede payload on I2C reads (§7.2.4.2); 2 bytes per word
         let mut bytes = [0u8; 2 + MAX_WORDS_PER_READ * 2];
         let byte_len = words.len() * 2 + 2;
         self.transport
@@ -125,7 +125,9 @@ where
     type BusError = SPI::Error;
 
     fn read_word(&mut self, reg: u8) -> Result<u16, Self::BusError> {
+        // MSB of address byte set to 1 for reads (§7.2.3)
         let cmd = 0x80 | (reg & 0x7F);
+        // 1 dummy byte precedes the 2 payload bytes on SPI reads (§7.2.3)
         let mut bytes = [0u8; 3];
         let mut ops = [Operation::Write(&[cmd]), Operation::Read(&mut bytes)];
         self.transport.bus.transaction(&mut ops)?;
@@ -139,6 +141,7 @@ where
     }
 
     fn read_words(&mut self, reg: u8, words: &mut [u16]) -> Result<(), Self::BusError> {
+        // MSB of address byte set to 1 for reads; 1 dummy byte precedes payload (§7.2.3)
         let cmd = 0x80 | (reg & 0x7F);
         // 1 dummy byte + 2 bytes per word
         let mut bytes = [0u8; 1 + MAX_WORDS_PER_READ * 2];
@@ -180,7 +183,7 @@ where
     }
 
     async fn read_words(&mut self, reg: u8, words: &mut [u16]) -> Result<(), Self::BusError> {
-        // 2 dummy bytes + 2 bytes per word
+        // 2 dummy bytes precede payload on I2C reads (§7.2.4.2); 2 bytes per word
         let mut bytes = [0u8; 2 + MAX_WORDS_PER_READ * 2];
         let byte_len = words.len() * 2 + 2;
         self.transport
@@ -202,7 +205,9 @@ where
     type BusError = SPI::Error;
 
     async fn read_word(&mut self, reg: u8) -> Result<u16, Self::BusError> {
+        // MSB of address byte set to 1 for reads (§7.2.3)
         let cmd = 0x80 | (reg & 0x7F);
+        // 1 dummy byte precedes the 2 payload bytes on SPI reads (§7.2.3)
         let mut bytes = [0u8; 3];
         let mut ops = [Operation::Write(&[cmd]), Operation::Read(&mut bytes)];
         self.transport.bus.transaction(&mut ops).await?;
@@ -216,6 +221,7 @@ where
     }
 
     async fn read_words(&mut self, reg: u8, words: &mut [u16]) -> Result<(), Self::BusError> {
+        // MSB of address byte set to 1 for reads; 1 dummy byte precedes payload (§7.2.3)
         let cmd = 0x80 | (reg & 0x7F);
         // 1 dummy byte + 2 bytes per word
         let mut bytes = [0u8; 1 + MAX_WORDS_PER_READ * 2];
