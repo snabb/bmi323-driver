@@ -138,7 +138,10 @@ where
 /// Convert a raw TEMP_DATA register value to degrees Celsius.
 ///
 /// Returns `Err(Error::InvalidTemperature)` when the raw value is 0x8000,
-/// the BMI323 "invalid temperature" sentinel (datasheet §5.9).
+/// the BMI323 "invalid temperature" sentinel
+/// (§6.1.2, Register (0x09) temp_data; §5.6.3).
+///
+/// The conversion formula `T = raw / 512 + 23` is defined in §5.6.3.
 pub(crate) fn temperature_raw_to_celsius<E>(raw: i16) -> Result<f32, Error<E>> {
     if raw == i16::MIN {
         return Err(Error::InvalidTemperature);

@@ -290,7 +290,7 @@ where
         config: FifoConfig,
         watermark_words: u16,
     ) -> Result<(), Error<<Self as SyncAccess>::BusError>> {
-        // FIFO_WATERMARK is a 10-bit field (datasheet §6.11.17)
+        // FIFO_WATERMARK is a 10-bit field (§6.1.2, Register (0x35) fifo_watermark)
         self.write_word(FIFO_WATERMARK, watermark_words & 0x03FF)
             .map_err(Error::Bus)?;
         self.write_word(FIFO_CONF, config.to_word())
@@ -299,11 +299,13 @@ where
 
     /// Read the current FIFO fill level in 16-bit words.
     pub fn fifo_fill_level(&mut self) -> Result<u16, Error<<Self as SyncAccess>::BusError>> {
+        // fill_level is an 11-bit field (§6.1.2, Register (0x15) fifo_fill_level)
         Ok(self.read_word(FIFO_FILL_LEVEL).map_err(Error::Bus)? & 0x07FF)
     }
 
     /// Flush all currently buffered FIFO contents.
     pub fn flush_fifo(&mut self) -> Result<(), Error<<Self as SyncAccess>::BusError>> {
+        // Writing 0x0001 to FIFO_CTRL triggers a FIFO flush (§5.7.4; §6.1.2, Register (0x37) fifo_ctrl)
         self.write_word(FIFO_CTRL, 0x0001).map_err(Error::Bus)
     }
 
@@ -410,6 +412,11 @@ where
             EXT_NOMO_3,
             (config.duration & 0x1FFF) | (((config.wait_time as u16) & 0x07) << 13),
         )?;
+        // FEATURE_IO0 bit assignments: bits[2:0]=no_motion axes, bits[5:3]=any_motion axes,
+        // bit6=flat_en, bit7=orient_en, bit8=step_det_en, bit9=step_cnt_en,
+        // bit10=sig_motion_en, bit11=tilt_en, bit12=single_tap_en,
+        // bit13=double_tap_en, bit14=triple_tap_en
+        // (§6.1.2, Register (0x10) feature_io0)
         self.modify_word(FEATURE_IO0, |mut word| {
             word &= !0b111;
             word |= config.axes.x as u16;
@@ -739,6 +746,9 @@ where
         self.write_feature_word(EXT_ST_SELECT, selection.to_word())?;
         self.write_word(CMD, SELF_TEST).map_err(Error::Bus)?;
 
+        // FEATURE_IO1 bit layout: bits[3:0]=error_status, bit4=st_result_rdy,
+        // bit6=st_result (pass/fail), bit7=sample_rate_error
+        // (§6.1.2, Register (0x11) feature_io1)
         for _ in 0..50 {
             let feature_io1 = self.read_word(FEATURE_IO1).map_err(Error::Bus)?;
             if feature_io1 & (1 << 4) != 0 {
@@ -818,6 +828,8 @@ where
         report_mode: EventReportMode,
         interrupt_hold: u8,
     ) -> Result<(), Error<<Self as SyncAccess>::BusError>> {
+        // EXT_GEN_SET_1 layout: bit0=report_mode, bits[4:1]=interrupt_hold
+        // (§6.2.2, Register (0x02) gen_set_1)
         self.modify_feature_word(EXT_GEN_SET_1, |word| {
             let mut updated = word & !0x003F;
             updated |= match report_mode {
