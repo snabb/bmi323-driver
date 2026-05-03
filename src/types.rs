@@ -19,19 +19,19 @@ pub enum Error<E> {
     InvalidTemperature,
 }
 
-/// Primary 7-bit BMI323 I2C address.
+/// Primary 7-bit BMI323 I2C address (§7.2.4.2).
 ///
 /// Use this when the sensor address-selection pin is strapped for the default
-/// address.
+/// address (SDO pulled to GND).
 pub const I2C_ADDRESS_PRIMARY: u8 = 0x68;
 
-/// Alternate 7-bit BMI323 I2C address.
+/// Alternate 7-bit BMI323 I2C address (§7.2.4.2).
 ///
 /// Use this when the sensor address-selection pin is strapped for the
-/// alternate address.
+/// alternate address (SDO pulled to VDDIO).
 pub const I2C_ADDRESS_ALTERNATE: u8 = 0x69;
 
-/// Decoded contents of the BMI323 `STATUS` register.
+/// Decoded contents of the BMI323 `STATUS` register (§6.1.2, Register (0x02) status).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct StatusWord(pub u16);
@@ -58,7 +58,7 @@ impl StatusWord {
     }
 }
 
-/// Decoded contents of the BMI323 `ERR_REG` register.
+/// Decoded contents of the BMI323 `ERR_REG` register (§6.1.2, Register (0x01) err_reg).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ErrorWord(pub u16);
@@ -80,7 +80,8 @@ impl ErrorWord {
     }
 }
 
-/// Decoded interrupt status for `INT1`, `INT2`, or I3C IBI.
+/// Decoded interrupt status for `INT1`, `INT2`, or I3C IBI
+/// (§6.1.2, Registers (0x0D-0x0F) int_status_int1/int2/ibi).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct InterruptStatus(pub u16);
@@ -155,7 +156,8 @@ impl InterruptStatus {
     }
 }
 
-/// Self-test selection written to the BMI323 `st_select` extended register.
+/// Self-test selection written to the BMI323 `st_select` extended register
+/// (§6.2.2, Register (0x25) st_select; §5.14).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum SelfTestSelection {
@@ -189,7 +191,7 @@ impl SelfTestSelection {
 }
 
 /// Detailed self-test result bits read from the BMI323 `st_result` extended
-/// register.
+/// register (§6.2.2, Register (0x24) st_result; §5.14).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct SelfTestDetail(pub u16);
@@ -338,7 +340,8 @@ pub struct DeviceState {
     pub error: ErrorWord,
 }
 
-/// Output data rate selection used by accel and gyro configuration.
+/// Output data rate selection used by accel and gyro configuration
+/// (§6.1.2, Register (0x20) acc_conf `acc_odr`; Register (0x21) gyr_conf `gyr_odr`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum OutputDataRate {
@@ -358,7 +361,8 @@ pub enum OutputDataRate {
     Hz6400 = 0xE,
 }
 
-/// Low-pass filter bandwidth relative to output data rate.
+/// Low-pass filter bandwidth relative to output data rate
+/// (§6.1.2, Register (0x20) acc_conf `acc_bwp`; Register (0x21) gyr_conf `gyr_bwp`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Bandwidth {
@@ -366,7 +370,8 @@ pub enum Bandwidth {
     OdrOver4 = 1,
 }
 
-/// Sample averaging depth used in supported sensor modes.
+/// Sample averaging depth used in supported sensor modes
+/// (§6.1.2, Register (0x20) acc_conf `acc_avg_num`; Register (0x21) gyr_conf `gyr_avg_num`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AverageSamples {
@@ -379,7 +384,7 @@ pub enum AverageSamples {
     Avg64 = 6,
 }
 
-/// Accelerometer operating mode.
+/// Accelerometer operating mode (§6.1.2, Register (0x20) acc_conf `acc_mode`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AccelMode {
@@ -389,7 +394,7 @@ pub enum AccelMode {
     HighPerformance = 7,
 }
 
-/// Gyroscope operating mode.
+/// Gyroscope operating mode (§6.1.2, Register (0x21) gyr_conf `gyr_mode`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum GyroMode {
@@ -400,7 +405,7 @@ pub enum GyroMode {
     HighPerformance = 7,
 }
 
-/// Accelerometer full-scale measurement range.
+/// Accelerometer full-scale measurement range (§6.1.2, Register (0x20) acc_conf `acc_range`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AccelRange {
@@ -422,7 +427,7 @@ impl AccelRange {
     }
 }
 
-/// Gyroscope full-scale measurement range.
+/// Gyroscope full-scale measurement range (§6.1.2, Register (0x21) gyr_conf `gyr_range`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum GyroRange {
@@ -446,7 +451,8 @@ impl GyroRange {
     }
 }
 
-/// High-level accelerometer configuration written to `ACC_CONF`.
+/// High-level accelerometer configuration written to `ACC_CONF`
+/// (§6.1.2, Register (0x20) acc_conf).
 ///
 /// `Default::default()` yields:
 /// - mode: [`AccelMode::Normal`]
@@ -492,7 +498,8 @@ impl AccelConfig {
     }
 }
 
-/// High-level gyroscope configuration written to `GYR_CONF`.
+/// High-level gyroscope configuration written to `GYR_CONF`
+/// (§6.1.2, Register (0x21) gyr_conf).
 ///
 /// `Default::default()` yields:
 /// - mode: [`GyroMode::Normal`]
@@ -538,7 +545,7 @@ impl GyroConfig {
     }
 }
 
-/// FIFO enable and behavior configuration.
+/// FIFO enable and behavior configuration (§6.1.2, Register (0x36) fifo_conf).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct FifoConfig {
@@ -565,7 +572,8 @@ impl FifoConfig {
     }
 }
 
-/// Interrupt output channel inside the BMI323.
+/// Interrupt output channel inside the BMI323
+/// (§6.1.2, Registers (0x3A-0x3B) int_map1/int_map2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum InterruptChannel {
@@ -577,7 +585,8 @@ pub enum InterruptChannel {
     Ibi,
 }
 
-/// Mapping destination for an interrupt source.
+/// Mapping destination for an interrupt source
+/// (§6.1.2, Registers (0x3A-0x3B) int_map1/int_map2, 2-bit routing fields).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum InterruptRoute {
@@ -597,7 +606,8 @@ impl From<InterruptRoute> for u16 {
     }
 }
 
-/// Electrical active level for an interrupt output pin.
+/// Electrical active level for an interrupt output pin
+/// (§6.1.2, Register (0x38) io_int_ctrl `int1_lvl`/`int2_lvl`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ActiveLevel {
@@ -607,7 +617,8 @@ pub enum ActiveLevel {
     High = 1,
 }
 
-/// Electrical driver mode for an interrupt output pin.
+/// Electrical driver mode for an interrupt output pin
+/// (§6.1.2, Register (0x38) io_int_ctrl `int1_od`/`int2_od`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum OutputMode {
@@ -617,7 +628,7 @@ pub enum OutputMode {
     OpenDrain = 1,
 }
 
-/// Electrical configuration for `INT1` or `INT2`.
+/// Electrical configuration for `INT1` or `INT2` (§6.1.2, Register (0x38) io_int_ctrl).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct InterruptPinConfig {
@@ -629,7 +640,8 @@ pub struct InterruptPinConfig {
     pub enabled: bool,
 }
 
-/// Interrupt source that can be mapped to an output channel.
+/// Interrupt source that can be mapped to an output channel
+/// (§6.1.2, Registers (0x3A-0x3B) int_map1/int_map2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum InterruptSource {
@@ -667,7 +679,8 @@ pub enum InterruptSource {
     FifoFull,
 }
 
-/// Event reporting policy for supported feature-engine motion detectors.
+/// Event reporting policy for supported feature-engine motion detectors
+/// (§6.2.2, Register (0x02) gen_set_1 `event_report_mode` bit 0).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum EventReportMode {
@@ -677,7 +690,8 @@ pub enum EventReportMode {
     FirstEventOnly,
 }
 
-/// Configuration for the BMI323 feature-engine step counter block.
+/// Configuration for the BMI323 feature-engine step counter block
+/// (§6.2.2, Register (0x10) sc_1; §5.8.5).
 ///
 /// The counter itself accumulates the total detected step count inside the
 /// sensor. This configuration controls two separate behaviors:
@@ -736,7 +750,8 @@ impl StepCounterConfig {
     }
 }
 
-/// Shared blocking behavior used by flat and orientation detection.
+/// Shared blocking behavior used by flat and orientation detection
+/// (§6.2.2, Register (0x0B) flat_1 `blocking`; Register (0x1C) orient_1 `blocking`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum FeatureBlockingMode {
@@ -752,7 +767,8 @@ pub enum FeatureBlockingMode {
     AccelOver1p5gOrFullSlope = 3,
 }
 
-/// Configuration mode for orientation spread between portrait and landscape.
+/// Configuration mode for orientation spread between portrait and landscape
+/// (§6.2.2, Register (0x1C) orient_1 `mode`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum OrientationMode {
@@ -764,7 +780,8 @@ pub enum OrientationMode {
     PortraitWide = 2,
 }
 
-/// Dominant accelerometer axis used for tap detection.
+/// Dominant accelerometer axis used for tap detection
+/// (§6.2.2, Register (0x1E) tap_1 `axis_sel`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum TapAxis {
@@ -776,7 +793,8 @@ pub enum TapAxis {
     Z = 2,
 }
 
-/// Reporting policy for tap gesture confirmation.
+/// Reporting policy for tap gesture confirmation
+/// (§6.2.2, Register (0x1E) tap_1 `wait_for_timeout`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum TapReportingMode {
@@ -786,7 +804,8 @@ pub enum TapReportingMode {
     Confirmed = 1,
 }
 
-/// Detection profile for tap recognition.
+/// Detection profile for tap recognition
+/// (§6.2.2, Register (0x1E) tap_1 `mode`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum TapDetectionMode {
@@ -798,7 +817,8 @@ pub enum TapDetectionMode {
     Robust = 2,
 }
 
-/// Configuration for the BMI323 flat-detection feature.
+/// Configuration for the BMI323 flat-detection feature
+/// (§6.2.2, Registers (0x0B-0x0C) flat_1/flat_2; §5.8.6).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct FlatConfig {
@@ -878,7 +898,8 @@ impl FlatConfig {
     }
 }
 
-/// Configuration for the BMI323 orientation-detection feature.
+/// Configuration for the BMI323 orientation-detection feature
+/// (§6.2.2, Registers (0x1C-0x1D) orient_1/orient_2; §5.8.7).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct OrientationConfig {
@@ -965,7 +986,8 @@ impl OrientationConfig {
     }
 }
 
-/// Configuration for the BMI323 tap-detection feature.
+/// Configuration for the BMI323 tap-detection feature
+/// (§6.2.2, Registers (0x1E-0x20) tap_1/tap_2/tap_3; §5.8.8).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct TapConfig {
@@ -1089,7 +1111,8 @@ impl TapConfig {
     }
 }
 
-/// Configuration for the BMI323 significant-motion feature.
+/// Configuration for the BMI323 significant-motion feature
+/// (§6.2.2, Registers (0x0D-0x0F) sigmo_1/sigmo_2/sigmo_3; §5.8.4).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct SignificantMotionConfig {
@@ -1164,7 +1187,8 @@ impl SignificantMotionConfig {
     }
 }
 
-/// Configuration for the BMI323 tilt-detection feature.
+/// Configuration for the BMI323 tilt-detection feature
+/// (§6.2.2, Registers (0x21-0x22) tilt_1/tilt_2; §5.8.9).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct TiltConfig {
@@ -1219,7 +1243,8 @@ impl TiltConfig {
     }
 }
 
-/// Reduced accelerometer configuration used by the BMI323 alternate mode.
+/// Reduced accelerometer configuration used by the BMI323 alternate mode
+/// (§6.1.2, Register (0x28) alt_acc_conf; §5.10).
 ///
 /// Unlike [`AccelConfig`], the alternate configuration does not contain
 /// bandwidth or range fields. The hardware only exposes mode, averaging, and
@@ -1242,7 +1267,8 @@ impl AltAccelConfig {
     }
 }
 
-/// Reduced gyroscope configuration used by the BMI323 alternate mode.
+/// Reduced gyroscope configuration used by the BMI323 alternate mode
+/// (§6.1.2, Register (0x29) alt_gyr_conf; §5.10).
 ///
 /// Unlike [`GyroConfig`], the alternate configuration does not contain
 /// bandwidth or range fields. The hardware only exposes mode, averaging, and
@@ -1266,7 +1292,7 @@ impl AltGyroConfig {
 }
 
 /// Supported feature-engine sources that can switch between user and alternate
-/// sensor configurations.
+/// sensor configurations (§6.1.2, Register (0x2A) alt_conf; §5.10).
 ///
 /// The BMI323 datasheet describes these as switch sources `A..I`. This API
 /// names them by their corresponding feature interrupts instead.
@@ -1296,7 +1322,7 @@ pub enum AltConfigSwitchSource {
 }
 
 /// Automatic switching policy between user and alternate accel/gyro
-/// configurations.
+/// configurations (§6.1.2, Register (0x2A) alt_conf; §5.10).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct AltConfigControl {
@@ -1315,7 +1341,8 @@ pub struct AltConfigControl {
     pub switch_to_user: AltConfigSwitchSource,
 }
 
-/// Current active accel/gyro configuration selection reported by the BMI323.
+/// Current active accel/gyro configuration selection reported by the BMI323
+/// (§6.1.2, Register (0x2B) alt_status).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct AltStatus(pub u16);
@@ -1395,7 +1422,8 @@ impl AltAccelSwitchProfile {
     }
 }
 
-/// Reference update policy for supported motion detectors.
+/// Reference update policy for supported motion detectors
+/// (§6.2.2, Register (0x05) anymo_1 `acc_ref_up`; Register (0x08) nomo_1 `acc_ref_up`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ReferenceUpdate {
@@ -1405,7 +1433,8 @@ pub enum ReferenceUpdate {
     EverySample,
 }
 
-/// Per-axis enable mask for motion features.
+/// Per-axis enable mask for motion features
+/// (§6.2.2, Register (0x07) anymo_3 `axis_sel`; Register (0x0A) nomo_3 `axis_sel`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct MotionAxes {
@@ -1426,7 +1455,8 @@ impl MotionAxes {
     };
 }
 
-/// Configuration for the BMI323 any-motion feature.
+/// Configuration for the BMI323 any-motion feature
+/// (§6.2.2, Registers (0x05-0x07) anymo_1/anymo_2/anymo_3; §5.8.2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct AnyMotionConfig {
@@ -1545,7 +1575,8 @@ impl AnyMotionConfig {
     }
 }
 
-/// Configuration for the BMI323 no-motion feature.
+/// Configuration for the BMI323 no-motion feature
+/// (§6.2.2, Registers (0x08-0x0A) nomo_1/nomo_2/nomo_3; §5.8.3).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct NoMotionConfig {
