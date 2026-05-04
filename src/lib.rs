@@ -92,10 +92,7 @@
 //! # #[cfg(feature = "async")] fn main() {}
 //! # #[cfg(not(feature = "async"))]
 //! # fn main() {
-//! use bmi323_driver::{
-//!     AccelConfig, AccelMode, AccelRange, AverageSamples, Bandwidth, Bmi323,
-//!     GyroConfig, GyroMode, GyroRange, I2C_ADDRESS_PRIMARY, OutputDataRate,
-//! };
+//! use bmi323_driver::{AccelConfig, Bmi323, GyroConfig, I2C_ADDRESS_PRIMARY, OutputDataRate};
 //! use embedded_hal::delay::DelayNs;
 //! use embedded_hal::i2c::I2c;
 //!
@@ -136,11 +133,9 @@
 //! # #[cfg(feature = "async")]
 //! # fn main() {
 //! use bmi323_driver::{
-//!     AccelConfig, AccelMode, AccelRange, ActiveLevel, AnyMotionConfig,
-//!     AverageSamples, Bandwidth, Bmi323, EventReportMode,
-//!     I2C_ADDRESS_PRIMARY, InterruptChannel, InterruptPinConfig,
-//!     InterruptRoute, InterruptSource, MotionAxes, OutputDataRate, OutputMode,
-//!     ReferenceUpdate,
+//!     AccelConfig, AccelMode, ActiveLevel, AnyMotionConfig, Bmi323, EventReportMode,
+//!     I2C_ADDRESS_PRIMARY, InterruptChannel, InterruptPinConfig, InterruptRoute,
+//!     InterruptSource, MotionAxes, OutputDataRate, OutputMode, ReferenceUpdate,
 //! };
 //! use embedded_hal_async::delay::DelayNs;
 //! use embedded_hal_async::digital::Wait;
