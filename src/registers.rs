@@ -78,6 +78,13 @@ pub(crate) const FEATURE_IO_STATUS_SYNC: u16 = 0x0001;
 /// (§6.1.2, Register (0x40) feature_ctrl, `engine_en` bit 0).
 pub(crate) const FEATURE_CTRL_ENABLE: u16 = 0x0001;
 
+/// `FEATURE_IO1` `error_status` value indicating the feature engine finished
+/// initializing successfully (§6.1.2, Register (0x11) feature_io1).
+pub(crate) const FEATURE_ENGINE_STATUS_INIT_OK: u8 = 0x01;
+/// `FEATURE_IO1` `error_status` value indicating the feature engine is active
+/// with no errors — the normal running state (§6.1.2, Register (0x11) feature_io1).
+pub(crate) const FEATURE_ENGINE_STATUS_NO_ERROR: u8 = 0x05;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum TransportKind {
     I2c,
