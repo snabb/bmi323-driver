@@ -1,5 +1,5 @@
 use bmi323_driver::{
-    AccelConfig, ActiveLevel, Bmi323Async, EventReportMode, I2C_ADDRESS_PRIMARY, InterruptChannel,
+    AccelConfig, ActiveLevel, Bmi323, EventReportMode, I2C_ADDRESS_PRIMARY, InterruptChannel,
     InterruptPinConfig, InterruptRoute, InterruptSource, OutputDataRate, OutputMode, TiltConfig,
 };
 use embedded_hal_async::delay::DelayNs;
@@ -17,7 +17,7 @@ where
     INT: Wait,
     D: DelayNs,
 {
-    let mut imu = Bmi323Async::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
+    let mut imu = Bmi323::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
 
     imu.init(delay).await?;
     imu.enable_feature_engine(delay).await?;

@@ -327,8 +327,7 @@ pub struct ImuData {
     pub gyro: AxisData,
 }
 
-/// Result returned by [`Bmi323::init`](crate::Bmi323::init) and
-/// [`Bmi323Async::init`](crate::Bmi323Async::init).
+/// Result returned by [`Bmi323::init`](crate::Bmi323::init).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct DeviceState {

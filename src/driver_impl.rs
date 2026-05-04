@@ -1,5 +1,7 @@
-use embedded_hal_async::delay::DelayNs as AsyncDelayNs;
-use embedded_hal_async::digital::Wait;
+#[cfg(not(feature = "async"))]
+use embedded_hal::delay::DelayNs;
+#[cfg(feature = "async")]
+use embedded_hal_async::delay::DelayNs;
 
 use crate::registers::{
     ACC_CONF, ACC_DATA_X, ALT_ACC_CONF, ALT_CONF, ALT_GYR_CONF, ALT_STATUS, BMI323_CHIP_ID,
@@ -15,17 +17,18 @@ use crate::registers::{
 };
 use crate::{
     AccelConfig, ActiveLevel, AltAccelConfig, AltConfigControl, AltGyroConfig, AltStatus,
-    AnyMotionConfig, AsyncAccess, AxisData, Bmi323Async, DeviceState, Error, ErrorWord,
-    EventReportMode, FifoConfig, FlatConfig, GyroConfig, ImuData, InterruptChannel,
-    InterruptPinConfig, InterruptRoute, InterruptSource, InterruptStatus, NoMotionConfig,
-    OrientationConfig, OutputDataRate, OutputMode, ReferenceUpdate, SelfTestDetail, SelfTestResult,
+    AnyMotionConfig, Access, AxisData, Bmi323, DeviceState, Error, ErrorWord, EventReportMode,
+    FifoConfig, FlatConfig, GyroConfig, ImuData, InterruptChannel, InterruptPinConfig,
+    InterruptRoute, InterruptSource, InterruptStatus, NoMotionConfig, OrientationConfig,
+    OutputDataRate, OutputMode, ReferenceUpdate, SelfTestDetail, SelfTestResult,
     SelfTestSelection, SignificantMotionConfig, StatusWord, StepCounterConfig, TapConfig,
     TiltConfig,
 };
 
-impl<T> Bmi323Async<T>
+#[maybe_async::maybe_async]
+impl<T> Bmi323<T>
 where
-    Self: AsyncAccess,
+    Self: Access,
 {
     /// Reset the sensor and verify communication, chip ID, and error state.
     ///
@@ -35,10 +38,10 @@ where
     /// [`set_accel_config`](Self::set_accel_config) and
     /// [`set_gyro_config`](Self::set_gyro_config) before depending on sample
     /// reads in application code.
-    pub async fn init<D: AsyncDelayNs>(
+    pub async fn init<D: DelayNs>(
         &mut self,
         delay: &mut D,
-    ) -> Result<DeviceState, Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<DeviceState, Error<<Self as Access>::BusError>> {
         // Reset on every init so the driver starts from a known device state
         // even if the MCU rebooted while the sensor stayed powered.
         self.soft_reset(delay).await?;
@@ -66,10 +69,10 @@ where
     }
 
     /// Issue the BMI323 soft-reset command and wait for restart completion.
-    pub async fn soft_reset<D: AsyncDelayNs>(
+    pub async fn soft_reset<D: DelayNs>(
         &mut self,
         delay: &mut D,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.write_word(CMD, SOFT_RESET).await.map_err(Error::Bus)?;
         // Datasheet Table 3: t_start = 2 ms typical after reset.
         delay.delay_ms(2).await;
@@ -87,11 +90,11 @@ where
     /// The returned [`SelfTestResult::error_status`] comes from
     /// `FEATURE_IO1.error_status`. On the BMI323, `0x5` is the normal
     /// "no error" value after the feature engine is active.
-    pub async fn run_self_test<D: AsyncDelayNs>(
+    pub async fn run_self_test<D: DelayNs>(
         &mut self,
         delay: &mut D,
         selection: SelfTestSelection,
-    ) -> Result<SelfTestResult, Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<SelfTestResult, Error<<Self as Access>::BusError>> {
         let saved_acc_conf = self.read_word(ACC_CONF).await.map_err(Error::Bus)?;
         let saved_gyr_conf = self.read_word(GYR_CONF).await.map_err(Error::Bus)?;
         let saved_alt_acc_conf = self.read_word(ALT_ACC_CONF).await.map_err(Error::Bus)?;
@@ -124,7 +127,7 @@ where
     /// Read and decode the `STATUS` register.
     pub async fn status_word(
         &mut self,
-    ) -> Result<StatusWord, Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<StatusWord, Error<<Self as Access>::BusError>> {
         self.read_word(STATUS)
             .await
             .map(StatusWord)
@@ -134,7 +137,7 @@ where
     /// Read and decode the `ERR_REG` register.
     pub async fn error_word(
         &mut self,
-    ) -> Result<ErrorWord, Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<ErrorWord, Error<<Self as Access>::BusError>> {
         self.read_word(ERR_REG)
             .await
             .map(ErrorWord)
@@ -148,7 +151,7 @@ where
     pub async fn set_accel_config(
         &mut self,
         config: AccelConfig,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.write_word(ACC_CONF, config.to_word())
             .await
             .map_err(Error::Bus)?;
@@ -163,7 +166,7 @@ where
     pub async fn set_gyro_config(
         &mut self,
         config: GyroConfig,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.write_word(GYR_CONF, config.to_word())
             .await
             .map_err(Error::Bus)?;
@@ -191,7 +194,9 @@ where
     ///
     /// For predictable results, configure the accelerometer first with
     /// [`set_accel_config`](Self::set_accel_config).
-    pub async fn read_accel(&mut self) -> Result<AxisData, Error<<Self as AsyncAccess>::BusError>> {
+    pub async fn read_accel(
+        &mut self,
+    ) -> Result<AxisData, Error<<Self as Access>::BusError>> {
         let mut words = [0u16; 3];
         self.read_words(ACC_DATA_X, &mut words)
             .await
@@ -203,7 +208,9 @@ where
     ///
     /// For predictable results, configure the gyroscope first with
     /// [`set_gyro_config`](Self::set_gyro_config).
-    pub async fn read_gyro(&mut self) -> Result<AxisData, Error<<Self as AsyncAccess>::BusError>> {
+    pub async fn read_gyro(
+        &mut self,
+    ) -> Result<AxisData, Error<<Self as Access>::BusError>> {
         let mut words = [0u16; 3];
         self.read_words(GYR_DATA_X, &mut words)
             .await
@@ -218,7 +225,7 @@ where
     /// [`set_gyro_config`](Self::set_gyro_config).
     pub async fn read_imu_data(
         &mut self,
-    ) -> Result<ImuData, Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<ImuData, Error<<Self as Access>::BusError>> {
         let mut words = [0u16; 6];
         self.read_words(ACC_DATA_X, &mut words)
             .await
@@ -232,7 +239,7 @@ where
     /// Read the temperature sensor and convert it to degrees Celsius.
     pub async fn read_temperature_celsius(
         &mut self,
-    ) -> Result<f32, Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<f32, Error<<Self as Access>::BusError>> {
         let raw = self.read_word(TEMP_DATA).await.map_err(Error::Bus)? as i16;
         crate::driver::temperature_raw_to_celsius(raw)
     }
@@ -240,7 +247,7 @@ where
     /// Read the 24-bit sensor time counter.
     pub async fn read_sensor_time(
         &mut self,
-    ) -> Result<u32, Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<u32, Error<<Self as Access>::BusError>> {
         let mut words = [0u16; 2];
         self.read_words(SENSOR_TIME_0, &mut words)
             .await
@@ -256,7 +263,7 @@ where
         &mut self,
         channel: InterruptChannel,
         config: InterruptPinConfig,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         let mut word = self.read_word(IO_INT_CTRL).await.map_err(Error::Bus)?;
         let shift = match channel {
             InterruptChannel::Int1 => 0,
@@ -274,7 +281,7 @@ where
     pub async fn set_interrupt_latching(
         &mut self,
         latched: bool,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.write_word(INT_CONF, latched as u16)
             .await
             .map_err(Error::Bus)
@@ -285,7 +292,7 @@ where
         &mut self,
         source: InterruptSource,
         route: InterruptRoute,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         let (register, shift) = interrupt_map_location(source);
         let mut word = self.read_word(register).await.map_err(Error::Bus)?;
         word &= !(0b11 << shift);
@@ -297,7 +304,7 @@ where
     pub async fn read_interrupt_status(
         &mut self,
         channel: InterruptChannel,
-    ) -> Result<InterruptStatus, Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<InterruptStatus, Error<<Self as Access>::BusError>> {
         let reg = match channel {
             InterruptChannel::Int1 => INT_STATUS_INT1,
             InterruptChannel::Int2 => INT_STATUS_INT2,
@@ -309,22 +316,6 @@ where
             .map_err(Error::Bus)
     }
 
-    /// Wait for an external GPIO interrupt line to assert, then read status.
-    ///
-    /// Any error from `pin.wait_for_high()` is silently discarded. The
-    /// interrupt status register is read regardless, so if the pin wait fails
-    /// the status read still proceeds. If you need to handle GPIO errors, call
-    /// `pin.wait_for_high()` yourself and then call
-    /// [`read_interrupt_status`](Self::read_interrupt_status) directly.
-    pub async fn wait_for_interrupt<P: Wait>(
-        &mut self,
-        pin: &mut P,
-        channel: InterruptChannel,
-    ) -> Result<InterruptStatus, Error<<Self as AsyncAccess>::BusError>> {
-        pin.wait_for_high().await.ok();
-        self.read_interrupt_status(channel).await
-    }
-
     /// Configure FIFO contents and watermark level.
     ///
     /// `watermark_words` is the interrupt threshold in 16-bit words. The BMI323
@@ -334,8 +325,8 @@ where
         &mut self,
         config: FifoConfig,
         watermark_words: u16,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
-        // FIFO_WATERMARK is a 10-bit field (datasheet §6.11.17)
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
+        // FIFO_WATERMARK is a 10-bit field (§6.1.2, Register (0x35) fifo_watermark)
         self.write_word(FIFO_WATERMARK, watermark_words & 0x03FF)
             .await
             .map_err(Error::Bus)?;
@@ -345,12 +336,16 @@ where
     }
 
     /// Read the current FIFO fill level in 16-bit words.
-    pub async fn fifo_fill_level(&mut self) -> Result<u16, Error<<Self as AsyncAccess>::BusError>> {
+    pub async fn fifo_fill_level(
+        &mut self,
+    ) -> Result<u16, Error<<Self as Access>::BusError>> {
+        // fill_level is an 11-bit field (§6.1.2, Register (0x15) fifo_fill_level)
         Ok(self.read_word(FIFO_FILL_LEVEL).await.map_err(Error::Bus)? & 0x07FF)
     }
 
     /// Flush all currently buffered FIFO contents.
-    pub async fn flush_fifo(&mut self) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    pub async fn flush_fifo(&mut self) -> Result<(), Error<<Self as Access>::BusError>> {
+        // Writing 0x0001 to FIFO_CTRL triggers a FIFO flush (§5.7.4; §6.1.2, Register (0x37) fifo_ctrl)
         self.write_word(FIFO_CTRL, 0x0001).await.map_err(Error::Bus)
     }
 
@@ -366,7 +361,7 @@ where
     pub async fn read_fifo_words(
         &mut self,
         words: &mut [u16],
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         assert!(
             words.len() <= crate::MAX_WORDS_PER_READ,
             "read_fifo_words: words.len() ({}) must not exceed MAX_WORDS_PER_READ ({})",
@@ -383,10 +378,10 @@ where
     /// After calling this method, re-configure the sensors with
     /// [`set_accel_config`](Self::set_accel_config) and
     /// [`set_gyro_config`](Self::set_gyro_config) before reading samples.
-    pub async fn enable_feature_engine<D: AsyncDelayNs>(
+    pub async fn enable_feature_engine<D: DelayNs>(
         &mut self,
         delay: &mut D,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.write_word(ACC_CONF, 0).await.map_err(Error::Bus)?;
         self.write_word(GYR_CONF, 0).await.map_err(Error::Bus)?;
         self.write_word(FEATURE_IO2, FEATURE_ENGINE_CONFIG)
@@ -417,7 +412,7 @@ where
     pub async fn configure_any_motion(
         &mut self,
         config: AnyMotionConfig,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.apply_common_feature_settings(config.report_mode, config.interrupt_hold)
             .await?;
         self.write_feature_word(
@@ -450,7 +445,7 @@ where
     pub async fn configure_no_motion(
         &mut self,
         config: NoMotionConfig,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.apply_common_feature_settings(config.report_mode, config.interrupt_hold)
             .await?;
         self.write_feature_word(
@@ -469,6 +464,11 @@ where
             (config.duration & 0x1FFF) | (((config.wait_time as u16) & 0x07) << 13),
         )
         .await?;
+        // FEATURE_IO0 bit assignments: bits[2:0]=no_motion axes, bits[5:3]=any_motion axes,
+        // bit6=flat_en, bit7=orient_en, bit8=step_det_en, bit9=step_cnt_en,
+        // bit10=sig_motion_en, bit11=tilt_en, bit12=single_tap_en,
+        // bit13=double_tap_en, bit14=triple_tap_en
+        // (§6.1.2, Register (0x10) feature_io0)
         self.modify_word(FEATURE_IO0, |mut word| {
             word &= !0b111;
             word |= config.axes.x as u16;
@@ -484,7 +484,7 @@ where
     pub async fn configure_flat(
         &mut self,
         config: FlatConfig,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.apply_common_feature_settings(config.report_mode, config.interrupt_hold)
             .await?;
         self.write_feature_word(
@@ -506,7 +506,7 @@ where
     pub async fn set_flat_enabled(
         &mut self,
         enabled: bool,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.modify_word(FEATURE_IO0, |mut word| {
             if enabled {
                 word |= 1 << 6;
@@ -523,7 +523,7 @@ where
     pub async fn configure_orientation(
         &mut self,
         config: OrientationConfig,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.apply_common_feature_settings(config.report_mode, config.interrupt_hold)
             .await?;
         self.write_feature_word(
@@ -547,7 +547,7 @@ where
     pub async fn set_orientation_enabled(
         &mut self,
         enabled: bool,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.modify_word(FEATURE_IO0, |mut word| {
             if enabled {
                 word |= 1 << 7;
@@ -566,7 +566,7 @@ where
     pub async fn configure_tap(
         &mut self,
         config: TapConfig,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.apply_common_feature_settings(config.report_mode, config.interrupt_hold)
             .await?;
         self.write_feature_word(
@@ -606,7 +606,7 @@ where
     pub async fn configure_significant_motion(
         &mut self,
         config: SignificantMotionConfig,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.apply_common_feature_settings(config.report_mode, config.interrupt_hold)
             .await?;
         self.write_feature_word(EXT_SIGMO_1, config.block_size)
@@ -630,7 +630,7 @@ where
     pub async fn set_significant_motion_enabled(
         &mut self,
         enabled: bool,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.modify_word(FEATURE_IO0, |mut word| {
             if enabled {
                 word |= 1 << 10;
@@ -647,7 +647,7 @@ where
     pub async fn configure_tilt(
         &mut self,
         config: TiltConfig,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.apply_common_feature_settings(config.report_mode, config.interrupt_hold)
             .await?;
         self.write_feature_word(
@@ -664,7 +664,7 @@ where
     pub async fn set_tilt_enabled(
         &mut self,
         enabled: bool,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.modify_word(FEATURE_IO0, |mut word| {
             if enabled {
                 word |= 1 << 11;
@@ -684,7 +684,7 @@ where
     pub async fn set_step_detector_enabled(
         &mut self,
         enabled: bool,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.modify_word(FEATURE_IO0, |mut word| {
             if enabled {
                 word |= 1 << 8;
@@ -704,7 +704,7 @@ where
     pub async fn set_step_counter_enabled(
         &mut self,
         enabled: bool,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.modify_word(FEATURE_IO0, |mut word| {
             if enabled {
                 word |= 1 << 9;
@@ -723,14 +723,14 @@ where
     pub async fn configure_step_counter(
         &mut self,
         config: StepCounterConfig,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.write_feature_word(EXT_SC_1, config.to_word()).await
     }
 
     /// Request a reset of the accumulated step count.
     pub async fn reset_step_counter(
         &mut self,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.configure_step_counter(StepCounterConfig {
             reset_counter: true,
             ..StepCounterConfig::disabled()
@@ -739,7 +739,9 @@ where
     }
 
     /// Read the 32-bit accumulated step count from the feature engine.
-    pub async fn read_step_count(&mut self) -> Result<u32, Error<<Self as AsyncAccess>::BusError>> {
+    pub async fn read_step_count(
+        &mut self,
+    ) -> Result<u32, Error<<Self as Access>::BusError>> {
         let low = self.read_word(FEATURE_IO2).await.map_err(Error::Bus)? as u32;
         let high = self.read_word(FEATURE_IO3).await.map_err(Error::Bus)? as u32;
         Ok(low | (high << 16))
@@ -749,7 +751,7 @@ where
     pub async fn set_alt_accel_config(
         &mut self,
         config: AltAccelConfig,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.write_word(ALT_ACC_CONF, config.to_word())
             .await
             .map_err(Error::Bus)
@@ -759,7 +761,7 @@ where
     pub async fn set_alt_gyro_config(
         &mut self,
         config: AltGyroConfig,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.write_word(ALT_GYR_CONF, config.to_word())
             .await
             .map_err(Error::Bus)
@@ -770,7 +772,7 @@ where
     pub async fn configure_alt_config_control(
         &mut self,
         config: AltConfigControl,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.write_word(
             ALT_CONF,
             (config.accel_enabled as u16)
@@ -789,7 +791,7 @@ where
     /// Read which configuration set is currently active for accel and gyro.
     pub async fn alt_status(
         &mut self,
-    ) -> Result<AltStatus, Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<AltStatus, Error<<Self as Access>::BusError>> {
         self.read_word(ALT_STATUS)
             .await
             .map(AltStatus)
@@ -800,7 +802,7 @@ where
         &mut self,
         reg: u8,
         f: F,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>>
+    ) -> Result<(), Error<<Self as Access>::BusError>>
     where
         F: FnOnce(u16) -> u16,
     {
@@ -814,11 +816,11 @@ where
         Ok(())
     }
 
-    async fn run_self_test_inner<D: AsyncDelayNs>(
+    async fn run_self_test_inner<D: DelayNs>(
         &mut self,
         delay: &mut D,
         selection: SelfTestSelection,
-    ) -> Result<SelfTestResult, Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<SelfTestResult, Error<<Self as Access>::BusError>> {
         self.enable_feature_engine(delay).await?;
 
         if selection.tests_gyroscope() {
@@ -841,6 +843,9 @@ where
             .await?;
         self.write_word(CMD, SELF_TEST).await.map_err(Error::Bus)?;
 
+        // FEATURE_IO1 bit layout: bits[3:0]=error_status, bit4=st_result_rdy,
+        // bit6=st_result (pass/fail), bit7=sample_rate_error
+        // (§6.1.2, Register (0x11) feature_io1)
         for _ in 0..50 {
             let feature_io1 = self.read_word(FEATURE_IO1).await.map_err(Error::Bus)?;
             if feature_io1 & (1 << 4) != 0 {
@@ -866,7 +871,7 @@ where
         alt_acc_conf: u16,
         alt_gyr_conf: u16,
         st_select: u16,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.write_word(ACC_CONF, acc_conf)
             .await
             .map_err(Error::Bus)?;
@@ -886,7 +891,7 @@ where
         &mut self,
         ext_addr: u16,
         value: u16,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
         self.write_word(FEATURE_DATA_ADDR, ext_addr)
             .await
             .map_err(Error::Bus)?;
@@ -898,7 +903,7 @@ where
     async fn read_feature_word(
         &mut self,
         ext_addr: u16,
-    ) -> Result<u16, Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<u16, Error<<Self as Access>::BusError>> {
         self.write_word(FEATURE_DATA_ADDR, ext_addr)
             .await
             .map_err(Error::Bus)?;
@@ -909,7 +914,7 @@ where
         &mut self,
         ext_addr: u16,
         f: F,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>>
+    ) -> Result<(), Error<<Self as Access>::BusError>>
     where
         F: FnOnce(u16) -> u16,
     {
@@ -929,7 +934,9 @@ where
         &mut self,
         report_mode: EventReportMode,
         interrupt_hold: u8,
-    ) -> Result<(), Error<<Self as AsyncAccess>::BusError>> {
+    ) -> Result<(), Error<<Self as Access>::BusError>> {
+        // EXT_GEN_SET_1 layout: bit0=report_mode, bits[4:1]=interrupt_hold
+        // (§6.2.2, Register (0x02) gen_set_1)
         self.modify_feature_word(EXT_GEN_SET_1, |word| {
             let mut updated = word & !0x003F;
             updated |= match report_mode {
@@ -940,5 +947,28 @@ where
             updated
         })
         .await
+    }
+}
+
+/// Async-only methods available when the `async` feature is enabled.
+#[cfg(feature = "async")]
+impl<T> Bmi323<T>
+where
+    Self: Access,
+{
+    /// Wait for an external GPIO interrupt line to assert, then read status.
+    ///
+    /// Any error from `pin.wait_for_high()` is silently discarded. The
+    /// interrupt status register is read regardless, so if the pin wait fails
+    /// the status read still proceeds. If you need to handle GPIO errors, call
+    /// `pin.wait_for_high()` yourself and then call
+    /// [`read_interrupt_status`](Self::read_interrupt_status) directly.
+    pub async fn wait_for_interrupt<P: embedded_hal_async::digital::Wait>(
+        &mut self,
+        pin: &mut P,
+        channel: InterruptChannel,
+    ) -> Result<InterruptStatus, Error<<Self as Access>::BusError>> {
+        pin.wait_for_high().await.ok();
+        self.read_interrupt_status(channel).await
     }
 }

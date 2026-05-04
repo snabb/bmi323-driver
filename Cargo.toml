@@ -1,6 +1,6 @@
 [package]
 name = "bmi323-driver"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"
@@ -21,17 +21,85 @@ include = [
 ]
 
 [package.metadata.docs.rs]
-all-features = true
+features = ["async", "defmt"]
+no-default-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = []
+# Exactly one of "blocking" or "async" must be selected.
+# Enabling both simultaneously will cause a compile error.
+default = ["blocking"]
+# Blocking (synchronous) driver using embedded-hal traits.
+blocking = ["maybe-async/is_sync"]
+# Async driver using embedded-hal-async traits.
+async = ["dep:embedded-hal-async"]
 defmt = ["dep:defmt"]
 
 [dependencies]
 defmt = { version = "1.0.1", optional = true }
 embedded-hal = "1.0.0"
-embedded-hal-async = "1.0.0"
+embedded-hal-async = { version = "1.0.0", optional = true }
+maybe-async = "0.2.10"
 
 [target.'cfg(not(target_os = "none"))'.dev-dependencies]
 embedded-hal-mock = { version = "0.11.1", default-features = false, features = ["eh1", "embedded-hal-async"] }
+
+[[test]]
+name = "blocking_i2c_transactions"
+required-features = ["blocking"]
+
+[[test]]
+name = "blocking_spi_transactions"
+required-features = ["blocking"]
+
+[[test]]
+name = "async_i2c_transactions"
+required-features = ["async"]
+
+[[test]]
+name = "async_spi_transactions"
+required-features = ["async"]
+
+[[example]]
+name = "blocking_i2c_basic"
+required-features = ["blocking"]
+
+[[example]]
+name = "async_i2c_alt_config"
+required-features = ["async"]
+
+[[example]]
+name = "async_i2c_flat"
+required-features = ["async"]
+
+[[example]]
+name = "async_i2c_interrupt"
+required-features = ["async"]
+
+[[example]]
+name = "async_i2c_no_motion"
+required-features = ["async"]
+
+[[example]]
+name = "async_i2c_orientation"
+required-features = ["async"]
+
+[[example]]
+name = "async_i2c_self_test"
+required-features = ["async"]
+
+[[example]]
+name = "async_i2c_significant_motion"
+required-features = ["async"]
+
+[[example]]
+name = "async_i2c_step_counter"
+required-features = ["async"]
+
+[[example]]
+name = "async_i2c_tap"
+required-features = ["async"]
+
+[[example]]
+name = "async_i2c_tilt"
+required-features = ["async"]

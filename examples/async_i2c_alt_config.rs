@@ -1,5 +1,5 @@
 use bmi323_driver::{
-    ActiveLevel, AltAccelSwitchProfile, AltConfigSwitchSource, Bmi323Async, EventReportMode,
+    ActiveLevel, AltAccelSwitchProfile, AltConfigSwitchSource, Bmi323, EventReportMode,
     I2C_ADDRESS_PRIMARY, InterruptChannel, InterruptPinConfig, InterruptRoute, InterruptSource,
     MotionAxes, NoMotionConfig, OutputDataRate, OutputMode, ReferenceUpdate,
 };
@@ -18,7 +18,7 @@ where
     INT: Wait,
     D: DelayNs,
 {
-    let mut imu = Bmi323Async::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
+    let mut imu = Bmi323::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
 
     imu.init(delay).await?;
     imu.enable_feature_engine(delay).await?;

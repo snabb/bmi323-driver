@@ -23,20 +23,23 @@ jobs:
       - name: Format check
         run: cargo fmt --check
 
-      - name: Clippy
-        run: cargo clippy --all-features -- -D warnings
+      - name: Clippy (blocking)
+        run: cargo clippy --features blocking,defmt -- -D warnings
 
-      - name: Unit tests
-        run: cargo test
+      - name: Clippy (async)
+        run: cargo clippy --no-default-features --features async,defmt -- -D warnings
 
-      - name: Unit tests all features
-        run: cargo test --all-features
+      - name: Tests (blocking)
+        run: cargo test --features blocking
 
-      - name: Generic examples
-        run: cargo check --examples
+      - name: Tests (async)
+        run: cargo test --no-default-features --features async
 
-      - name: Generic examples all features
-        run: cargo check --all-features --examples
+      - name: Examples check (blocking)
+        run: cargo check --examples --features blocking
+
+      - name: Examples check (async)
+        run: cargo check --no-default-features --examples --features async
 
       - name: Package verification
         run: cargo package
@@ -68,8 +71,14 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
+      - name: Coverage (blocking)
+        run: cargo llvm-cov --no-report --features blocking
+
+      - name: Coverage (async)
+        run: cargo llvm-cov --no-report --no-default-features --features async
+
       - name: Generate coverage report
-        run: cargo llvm-cov --all-features --lcov --output-path lcov.info
+        run: cargo llvm-cov report --lcov --output-path lcov.info
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v5

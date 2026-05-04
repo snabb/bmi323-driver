@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-use bmi323_driver::{Bmi323Async, I2C_ADDRESS_PRIMARY, SelfTestSelection};
+use bmi323_driver::{Bmi323, I2C_ADDRESS_PRIMARY, SelfTestSelection};
 use defmt::{error, info};
 use defmt_rtt as _;
 use embassy_executor::Spawner;
@@ -33,7 +33,7 @@ async fn main(_spawner: Spawner) {
     );
 
     let mut delay = Delay;
-    let mut imu = Bmi323Async::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
+    let mut imu = Bmi323::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
 
     if let Err(err) = imu.init(&mut delay).await {
         error!("BMI323 init failed: {:?}", err);
