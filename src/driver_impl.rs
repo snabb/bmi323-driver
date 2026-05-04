@@ -905,17 +905,15 @@ where
 {
     /// Wait for an external GPIO interrupt line to assert, then read status.
     ///
-    /// Any error from `pin.wait_for_high()` is silently discarded. The
-    /// interrupt status register is read regardless, so if the pin wait fails
-    /// the status read still proceeds. If you need to handle GPIO errors, call
-    /// `pin.wait_for_high()` yourself and then call
-    /// [`read_interrupt_status`](Self::read_interrupt_status) directly.
+    /// Returns [`Error::GpioError`] if `pin.wait_for_high()` fails. The
+    /// underlying GPIO error value is not preserved because the GPIO error type
+    /// is independent of the bus error type.
     pub async fn wait_for_interrupt<P: embedded_hal_async::digital::Wait>(
         &mut self,
         pin: &mut P,
         channel: InterruptChannel,
     ) -> Result<InterruptStatus, Error<<Self as Access>::BusError>> {
-        pin.wait_for_high().await.ok();
+        pin.wait_for_high().await.map_err(|_| Error::GpioError)?;
         self.read_interrupt_status(channel).await
     }
 }
