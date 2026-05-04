@@ -1,3 +1,13 @@
+// Compiled twice via Cargo.toml [[test]] entries — once with `blocking` feature and once
+// with `async`. The `run!` macro dispatches each driver call to the right form.
+
+#[cfg(feature = "async")]
+use core::future::Future;
+#[cfg(feature = "async")]
+use core::pin::pin;
+#[cfg(feature = "async")]
+use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
+
 use bmi323_driver::{
     AccelConfig, AccelMode, AccelRange, ActiveLevel, AltAccelConfig, AltConfigControl,
     AltConfigSwitchSource, AltGyroConfig, AnyMotionConfig, AverageSamples, Bandwidth, Bmi323,
@@ -7,8 +17,11 @@ use bmi323_driver::{
     ReferenceUpdate, SelfTestSelection, SignificantMotionConfig, StepCounterConfig, TapAxis,
     TapConfig, TapDetectionMode, TapReportingMode, TiltConfig,
 };
-use embedded_hal::delay::DelayNs;
-use embedded_hal::i2c::ErrorKind as I2cErrorKind;
+use embedded_hal_mock::eh1::delay::{CheckedDelay, Transaction as DelayTransaction};
+#[cfg(feature = "async")]
+use embedded_hal_mock::eh1::digital::{
+    Mock as PinMock, State as PinState, Transaction as PinTransaction,
+};
 use embedded_hal_mock::eh1::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
 
 const ADDR: u8 = 0x68;
@@ -74,6 +87,63 @@ const EXT_ST_SELECT: u16 = 0x25;
 const BMI323_CHIP_ID: u16 = 0x0043;
 const SOFT_RESET: u16 = 0xDEAF;
 
+/// Minimal executor for driving futures in these unit tests; the mock HAL
+/// operations always complete immediately so a no-op waker is sufficient.
+#[cfg(feature = "async")]
+fn block_on<F: Future>(future: F) -> F::Output {
+    fn raw_waker() -> RawWaker {
+        fn clone(_: *const ()) -> RawWaker {
+            raw_waker()
+        }
+        fn wake(_: *const ()) {}
+        fn wake_by_ref(_: *const ()) {}
+        fn drop(_: *const ()) {}
+        RawWaker::new(
+            core::ptr::null(),
+            &RawWakerVTable::new(clone, wake, wake_by_ref, drop),
+        )
+    }
+    let waker = unsafe { Waker::from_raw(raw_waker()) };
+    let mut context = Context::from_waker(&waker);
+    let mut future = pin!(future);
+    loop {
+        match Future::poll(future.as_mut(), &mut context) {
+            Poll::Ready(output) => return output,
+            Poll::Pending => core::hint::spin_loop(),
+        }
+    }
+}
+
+/// Drive `expr` to completion: evaluates directly in blocking mode,
+/// or runs through `block_on` in async mode.
+macro_rules! run {
+    ($expr:expr) => {{
+        #[cfg(feature = "blocking")]
+        let __result = $expr;
+        #[cfg(feature = "async")]
+        let __result = block_on($expr);
+        __result
+    }};
+}
+
+/// Build a `DelayTransaction` for the active feature mode.
+macro_rules! delay_tx {
+    (ms, $n:expr) => {{
+        #[cfg(feature = "blocking")]
+        let __tx = DelayTransaction::delay_ms($n);
+        #[cfg(feature = "async")]
+        let __tx = DelayTransaction::async_delay_ms($n);
+        __tx
+    }};
+    (us, $n:expr) => {{
+        #[cfg(feature = "blocking")]
+        let __tx = DelayTransaction::delay_us($n);
+        #[cfg(feature = "async")]
+        let __tx = DelayTransaction::async_delay_us($n);
+        __tx
+    }};
+}
+
 fn write_word(reg: u8, word: u16) -> I2cTransaction {
     let [lo, hi] = word.to_le_bytes();
     I2cTransaction::write(ADDR, vec![reg, lo, hi])
@@ -94,27 +164,6 @@ fn read_words(reg: u8, words: &[u16]) -> I2cTransaction {
     I2cTransaction::write_read(ADDR, vec![reg], response)
 }
 
-#[derive(Default, Debug)]
-struct TestDelay {
-    ms_calls: Vec<u32>,
-    us_calls: Vec<u32>,
-    ns_calls: Vec<u32>,
-}
-
-impl DelayNs for TestDelay {
-    fn delay_ns(&mut self, ns: u32) {
-        self.ns_calls.push(ns);
-    }
-
-    fn delay_us(&mut self, us: u32) {
-        self.us_calls.push(us);
-    }
-
-    fn delay_ms(&mut self, ms: u32) {
-        self.ms_calls.push(ms);
-    }
-}
-
 #[test]
 fn init_resets_sensor_and_reads_device_state() {
     let expectations = [
@@ -125,9 +174,9 @@ fn init_resets_sensor_and_reads_device_state() {
     ];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
-    let mut delay = TestDelay::default();
+    let mut delay = CheckedDelay::new(&[delay_tx!(ms, 2)]);
 
-    let state = imu.init(&mut delay).unwrap();
+    let state = run!(imu.init(&mut delay)).unwrap();
 
     assert_eq!(state.chip_id, BMI323_CHIP_ID as u8);
     assert!(state.status.por_detected());
@@ -135,10 +184,8 @@ fn init_resets_sensor_and_reads_device_state() {
     assert!(state.status.drdy_gyro());
     assert!(state.status.drdy_accel());
     assert!(!state.error.fatal());
-    assert_eq!(delay.ms_calls, vec![2]);
-    assert!(delay.us_calls.is_empty());
-    assert!(delay.ns_calls.is_empty());
 
+    delay.done();
     let mut i2c = imu.destroy();
     i2c.done();
 }
@@ -166,8 +213,8 @@ fn set_sensor_configs_writes_expected_words_and_tracks_ranges() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.set_accel_config(accel).unwrap();
-    imu.set_gyro_config(gyro).unwrap();
+    run!(imu.set_accel_config(accel)).unwrap();
+    run!(imu.set_gyro_config(gyro)).unwrap();
 
     assert_eq!(imu.accel_range(), AccelRange::G16);
     assert_eq!(imu.gyro_range(), GyroRange::Dps500);
@@ -188,10 +235,12 @@ fn enable_feature_engine_uses_expected_register_sequence() {
     ];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
-    let mut delay = TestDelay::default();
+    // The polling loop delays 200 µs before each read; returns on first poll.
+    let mut delay = CheckedDelay::new(&[delay_tx!(us, 200)]);
 
-    imu.enable_feature_engine(&mut delay).unwrap();
+    run!(imu.enable_feature_engine(&mut delay)).unwrap();
 
+    delay.done();
     let mut i2c = imu.destroy();
     i2c.done();
 }
@@ -234,18 +283,17 @@ fn configure_any_motion_and_interrupt_routing_programs_expected_registers() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.configure_any_motion(config).unwrap();
-    imu.configure_interrupt_pin(
+    run!(imu.configure_any_motion(config)).unwrap();
+    run!(imu.configure_interrupt_pin(
         InterruptChannel::Int1,
         InterruptPinConfig {
             active_level: ActiveLevel::High,
             output_mode: OutputMode::OpenDrain,
             enabled: true,
         },
-    )
+    ))
     .unwrap();
-    imu.map_interrupt(InterruptSource::AnyMotion, InterruptRoute::Int1)
-        .unwrap();
+    run!(imu.map_interrupt(InterruptSource::AnyMotion, InterruptRoute::Int1)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -285,7 +333,7 @@ fn configure_no_motion_programs_expected_registers() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.configure_no_motion(config).unwrap();
+    run!(imu.configure_no_motion(config)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -305,9 +353,9 @@ fn read_paths_decode_burst_and_feature_words_correctly() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    let imu_data = imu.read_imu_data().unwrap();
-    let sensor_time = imu.read_sensor_time().unwrap();
-    let step_count = imu.read_step_count().unwrap();
+    let imu_data = run!(imu.read_imu_data()).unwrap();
+    let sensor_time = run!(imu.read_sensor_time()).unwrap();
+    let step_count = run!(imu.read_step_count()).unwrap();
 
     assert_eq!(imu_data.accel.x, 1);
     assert_eq!(imu_data.accel.y, -2);
@@ -339,14 +387,14 @@ fn configure_alt_config_control_writes_sensor_and_feature_words() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.configure_alt_config_control(control).unwrap();
+    run!(imu.configure_alt_config_control(control)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
 }
 
 #[test]
-fn run_self_test_uses_expected_i2c_sequence() {
+fn run_self_test_uses_expected_sequence() {
     let expectations = [
         write_word(ACC_CONF, 0x0000),
         write_word(GYR_CONF, 0x0000),
@@ -366,21 +414,18 @@ fn run_self_test_uses_expected_i2c_sequence() {
     ];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
-    let mut delay = TestDelay::default();
+    // enable_feature_engine: 1 poll, returns ACTIVATED → 1×200µs pre-poll delay.
+    // Self-test result ready on first poll → no 10ms poll delay.
+    let mut delay = CheckedDelay::new(&[delay_tx!(us, 200)]);
 
-    let result = imu
-        .run_self_test(&mut delay, SelfTestSelection::Gyroscope)
-        .unwrap();
+    let result = run!(imu.run_self_test(&mut delay, SelfTestSelection::Gyroscope)).unwrap();
 
     assert!(result.passed);
     assert!(!result.sample_rate_error);
     assert_eq!(result.error_status, 5);
     assert!(result.gyroscope_ok());
-    // Mock returns ready on first poll so no 10 ms self-test delays are issued;
-    // only the 200 µs inter-poll delays from enable_feature_engine are observed.
-    assert!(delay.us_calls.iter().any(|&us| us == 200));
-    assert!(delay.ms_calls.is_empty());
 
+    delay.done();
     let mut i2c = imu.destroy();
     i2c.done();
 }
@@ -416,7 +461,7 @@ fn configure_flat_programs_expected_registers() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.configure_flat(config).unwrap();
+    run!(imu.configure_flat(config)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -455,7 +500,7 @@ fn configure_orientation_programs_expected_registers() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.configure_orientation(config).unwrap();
+    run!(imu.configure_orientation(config)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -503,7 +548,7 @@ fn configure_tap_programs_expected_registers() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.configure_tap(config).unwrap();
+    run!(imu.configure_tap(config)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -543,7 +588,7 @@ fn configure_significant_motion_programs_expected_registers() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.configure_significant_motion(config).unwrap();
+    run!(imu.configure_significant_motion(config)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -578,7 +623,7 @@ fn configure_tilt_programs_expected_registers() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.configure_tilt(config).unwrap();
+    run!(imu.configure_tilt(config)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -599,8 +644,8 @@ fn step_detector_and_counter_enable_programs_expected_bits() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.set_step_detector_enabled(true).unwrap();
-    imu.set_step_counter_enabled(true).unwrap();
+    run!(imu.set_step_detector_enabled(true)).unwrap();
+    run!(imu.set_step_counter_enabled(true)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -619,7 +664,7 @@ fn configure_step_counter_writes_expected_feature_word() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.configure_step_counter(config).unwrap();
+    run!(imu.configure_step_counter(config)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -635,7 +680,7 @@ fn reset_step_counter_sets_reset_bit() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.reset_step_counter().unwrap();
+    run!(imu.reset_step_counter()).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -647,8 +692,8 @@ fn set_interrupt_latching_writes_int_conf() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.set_interrupt_latching(true).unwrap();
-    imu.set_interrupt_latching(false).unwrap();
+    run!(imu.set_interrupt_latching(true)).unwrap();
+    run!(imu.set_interrupt_latching(false)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -664,9 +709,9 @@ fn read_interrupt_status_reads_expected_registers() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    let s1 = imu.read_interrupt_status(InterruptChannel::Int1).unwrap();
-    let s2 = imu.read_interrupt_status(InterruptChannel::Int2).unwrap();
-    let s3 = imu.read_interrupt_status(InterruptChannel::Ibi).unwrap();
+    let s1 = run!(imu.read_interrupt_status(InterruptChannel::Int1)).unwrap();
+    let s2 = run!(imu.read_interrupt_status(InterruptChannel::Int2)).unwrap();
+    let s3 = run!(imu.read_interrupt_status(InterruptChannel::Ibi)).unwrap();
 
     assert!(s1.accel_data_ready());
     assert!(!s1.gyro_data_ready());
@@ -697,7 +742,7 @@ fn set_fifo_config_writes_watermark_and_conf() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.set_fifo_config(config, 42).unwrap();
+    run!(imu.set_fifo_config(config, 42)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -710,7 +755,7 @@ fn fifo_fill_level_masks_upper_bits() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    let level = imu.fifo_fill_level().unwrap();
+    let level = run!(imu.fifo_fill_level()).unwrap();
 
     assert_eq!(level, 0x02BC);
 
@@ -724,7 +769,7 @@ fn flush_fifo_writes_fifo_ctrl() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.flush_fifo().unwrap();
+    run!(imu.flush_fifo()).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -737,7 +782,7 @@ fn read_fifo_words_reads_from_fifo_data_register() {
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
     let mut words = [0u16; 2];
-    imu.read_fifo_words(&mut words).unwrap();
+    run!(imu.read_fifo_words(&mut words)).unwrap();
 
     assert_eq!(words[0], 0x1234);
     assert_eq!(words[1], 0x5678);
@@ -753,7 +798,7 @@ fn read_temperature_celsius_converts_raw_correctly() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    let temp = imu.read_temperature_celsius().unwrap();
+    let temp = run!(imu.read_temperature_celsius()).unwrap();
 
     assert!((temp - 24.0).abs() < 0.001);
 
@@ -770,8 +815,8 @@ fn read_accel_and_gyro_read_from_separate_registers() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    let accel = imu.read_accel().unwrap();
-    let gyro = imu.read_gyro().unwrap();
+    let accel = run!(imu.read_accel()).unwrap();
+    let gyro = run!(imu.read_gyro()).unwrap();
 
     assert_eq!(accel.x, 100);
     assert_eq!(accel.y, -56);
@@ -792,15 +837,16 @@ fn init_returns_invalid_chip_id_error() {
     ];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
-    let mut delay = TestDelay::default();
+    let mut delay = CheckedDelay::new(&[delay_tx!(ms, 2)]);
 
-    let result = imu.init(&mut delay);
+    let result = run!(imu.init(&mut delay));
 
     assert!(matches!(
         result,
         Err(bmi323_driver::Error::InvalidChipId(0xAB))
     ));
 
+    delay.done();
     let mut i2c = imu.destroy();
     i2c.done();
 }
@@ -814,12 +860,13 @@ fn init_returns_fatal_error_when_fatal_bit_set() {
     ];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
-    let mut delay = TestDelay::default();
+    let mut delay = CheckedDelay::new(&[delay_tx!(ms, 2)]);
 
-    let result = imu.init(&mut delay);
+    let result = run!(imu.init(&mut delay));
 
     assert!(matches!(result, Err(bmi323_driver::Error::FatalError)));
 
+    delay.done();
     let mut i2c = imu.destroy();
     i2c.done();
 }
@@ -834,14 +881,14 @@ fn configure_interrupt_pin_int2_writes_upper_byte_bits() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.configure_interrupt_pin(
+    run!(imu.configure_interrupt_pin(
         InterruptChannel::Int2,
         InterruptPinConfig {
             active_level: ActiveLevel::High,
             output_mode: OutputMode::PushPull,
             enabled: true,
         },
-    )
+    ))
     .unwrap();
 
     let mut i2c = imu.destroy();
@@ -855,14 +902,14 @@ fn configure_interrupt_pin_ibi_reads_register_then_returns_without_writing() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.configure_interrupt_pin(
+    run!(imu.configure_interrupt_pin(
         InterruptChannel::Ibi,
         InterruptPinConfig {
             active_level: ActiveLevel::High,
             output_mode: OutputMode::PushPull,
             enabled: true,
         },
-    )
+    ))
     .unwrap();
 
     let mut i2c = imu.destroy();
@@ -904,7 +951,7 @@ fn configure_any_motion_on_detection_sets_bit12_to_zero() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.configure_any_motion(config).unwrap();
+    run!(imu.configure_any_motion(config)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -945,7 +992,7 @@ fn configure_no_motion_every_sample_sets_bit12_to_one() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.configure_no_motion(config).unwrap();
+    run!(imu.configure_no_motion(config)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -982,12 +1029,12 @@ fn disabling_feature_engine_bits_clears_expected_bits() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.set_flat_enabled(false).unwrap();
-    imu.set_orientation_enabled(false).unwrap();
-    imu.set_significant_motion_enabled(false).unwrap();
-    imu.set_tilt_enabled(false).unwrap();
-    imu.set_step_detector_enabled(false).unwrap();
-    imu.set_step_counter_enabled(false).unwrap();
+    run!(imu.set_flat_enabled(false)).unwrap();
+    run!(imu.set_orientation_enabled(false)).unwrap();
+    run!(imu.set_significant_motion_enabled(false)).unwrap();
+    run!(imu.set_tilt_enabled(false)).unwrap();
+    run!(imu.set_step_detector_enabled(false)).unwrap();
+    run!(imu.set_step_counter_enabled(false)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -1004,7 +1051,7 @@ fn set_alt_accel_config_writes_alt_acc_conf() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.set_alt_accel_config(config).unwrap();
+    run!(imu.set_alt_accel_config(config)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -1021,7 +1068,7 @@ fn set_alt_gyro_config_writes_alt_gyr_conf() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    imu.set_alt_gyro_config(config).unwrap();
+    run!(imu.set_alt_gyro_config(config)).unwrap();
 
     let mut i2c = imu.destroy();
     i2c.done();
@@ -1034,7 +1081,7 @@ fn alt_status_reads_alt_status_register() {
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
-    let status = imu.alt_status().unwrap();
+    let status = run!(imu.alt_status()).unwrap();
 
     assert!(status.accel_uses_alternate());
     assert!(status.gyro_uses_alternate());
@@ -1058,14 +1105,17 @@ fn enable_feature_engine_returns_error_when_never_ready() {
     expectations.push(read_word(FEATURE_IO1, 0x0002));
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
-    let mut delay = TestDelay::default();
+    // 32 polls, each preceded by a 200 µs delay
+    let delay_transactions: Vec<_> = (0..32).map(|_| delay_tx!(us, 200)).collect();
+    let mut delay = CheckedDelay::new(&delay_transactions);
 
-    let result = imu.enable_feature_engine(&mut delay);
+    let result = run!(imu.enable_feature_engine(&mut delay));
 
     assert!(matches!(
         result,
         Err(bmi323_driver::Error::FeatureEngineNotReady(2))
     ));
+    delay.done();
     let mut i2c = imu.destroy();
     i2c.done();
 }
@@ -1083,24 +1133,43 @@ fn run_self_test_accelerometer_selection_times_out_when_feature_never_signals() 
         // Accelerometer selection: tests_gyroscope() == false → no ACC_CONF write
         write_word(ALT_ACC_CONF, 0x0000),
         write_word(ALT_GYR_CONF, 0x0000),
-        // write_feature_word(EXT_ST_SELECT, Accelerometer.to_word() == 0x0001)
         write_word(FEATURE_DATA_ADDR, EXT_ST_SELECT),
-        write_word(FEATURE_DATA_TX, 0x0001),
-        write_word(CMD, 0x0100), // SELF_TEST
+        write_word(FEATURE_DATA_TX, 0x0001), // Accelerometer.to_word()
+        write_word(CMD, 0x0100),             // SELF_TEST
     ];
-    // 50 poll iterations: bit 4 never set
+    // Feature engine: 1 poll → 1×200µs pre-poll delay. Self-test: 50 polls all fail.
+    let mut delay_transactions = vec![delay_tx!(us, 200)];
     for _ in 0..50 {
+        delay_transactions.push(delay_tx!(ms, 10));
         expectations.push(read_word(FEATURE_IO1, 0x0000));
     }
 
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
-    let mut delay = TestDelay::default();
+    let mut delay = CheckedDelay::new(&delay_transactions);
 
-    let result = imu.run_self_test(&mut delay, SelfTestSelection::Accelerometer);
+    let result = run!(imu.run_self_test(&mut delay, SelfTestSelection::Accelerometer));
 
     assert!(matches!(result, Err(bmi323_driver::Error::SelfTestTimeout)));
-    assert_eq!(delay.ms_calls.len(), 50);
+    delay.done();
+    let mut i2c = imu.destroy();
+    i2c.done();
+}
+
+/// `wait_for_interrupt` is only available in async builds.
+#[cfg(feature = "async")]
+#[test]
+fn wait_for_interrupt_waits_for_high_then_reads_status() {
+    let i2c_expectations = [read_word(INT_STATUS_INT1, 0x0002)]; // any_motion bit set
+    let pin_expectations = [PinTransaction::wait_for_state(PinState::High)];
+    let i2c = I2cMock::new(&i2c_expectations);
+    let mut imu = Bmi323::new_i2c(i2c, ADDR);
+    let mut pin = PinMock::new(&pin_expectations);
+
+    let status = block_on(imu.wait_for_interrupt(&mut pin, InterruptChannel::Int1)).unwrap();
+
+    assert!(status.any_motion());
+    pin.done();
     let mut i2c = imu.destroy();
     i2c.done();
 }

@@ -1,9 +1,19 @@
+// Compiled twice via Cargo.toml [[test]] entries — once with `blocking` feature and once
+// with `async`. The `run!` macro dispatches each driver call to the right form.
+
+#[cfg(feature = "async")]
+use core::future::Future;
+#[cfg(feature = "async")]
+use core::pin::pin;
+#[cfg(feature = "async")]
+use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
+
 use bmi323_driver::{
     AccelConfig, AccelMode, AccelRange, AnyMotionConfig, AverageSamples, Bandwidth, Bmi323,
     EventReportMode, GyroConfig, GyroMode, GyroRange, MotionAxes, OutputDataRate, ReferenceUpdate,
     SelfTestSelection,
 };
-use embedded_hal::delay::DelayNs;
+use embedded_hal_mock::eh1::delay::{CheckedDelay, Transaction as DelayTransaction};
 use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction};
 
 const CHIP_ID: u8 = 0x00;
@@ -16,6 +26,8 @@ const FEATURE_IO2: u8 = 0x12;
 const FEATURE_IO_STATUS: u8 = 0x14;
 const ACC_CONF: u8 = 0x20;
 const GYR_CONF: u8 = 0x21;
+const ALT_ACC_CONF: u8 = 0x28;
+const ALT_GYR_CONF: u8 = 0x29;
 const FEATURE_CTRL: u8 = 0x40;
 const FEATURE_DATA_ADDR: u8 = 0x41;
 const FEATURE_DATA_TX: u8 = 0x42;
@@ -29,6 +41,64 @@ const EXT_ST_RESULT: u16 = 0x24;
 const EXT_ST_SELECT: u16 = 0x25;
 
 const BMI323_CHIP_ID: u16 = 0x0043;
+
+/// Minimal executor for driving futures in these unit tests; the mock HAL
+/// operations always complete immediately so a no-op waker is sufficient.
+#[cfg(feature = "async")]
+fn block_on<F: Future>(future: F) -> F::Output {
+    fn raw_waker() -> RawWaker {
+        fn clone(_: *const ()) -> RawWaker {
+            raw_waker()
+        }
+        fn wake(_: *const ()) {}
+        fn wake_by_ref(_: *const ()) {}
+        fn drop(_: *const ()) {}
+        RawWaker::new(
+            core::ptr::null(),
+            &RawWakerVTable::new(clone, wake, wake_by_ref, drop),
+        )
+    }
+    let waker = unsafe { Waker::from_raw(raw_waker()) };
+    let mut context = Context::from_waker(&waker);
+    let mut future = pin!(future);
+    loop {
+        match Future::poll(future.as_mut(), &mut context) {
+            Poll::Ready(output) => return output,
+            Poll::Pending => core::hint::spin_loop(),
+        }
+    }
+}
+
+/// Drive `expr` to completion: evaluates directly in blocking mode,
+/// or runs through `block_on` in async mode.
+macro_rules! run {
+    ($expr:expr) => {{
+        #[cfg(feature = "blocking")]
+        let __result = $expr;
+        #[cfg(feature = "async")]
+        let __result = block_on($expr);
+        __result
+    }};
+}
+
+/// Build a `DelayTransaction` for the active feature mode.
+macro_rules! delay_tx {
+    (ms, $n:expr) => {{
+        #[cfg(feature = "blocking")]
+        let __tx = DelayTransaction::delay_ms($n);
+        #[cfg(feature = "async")]
+        let __tx = DelayTransaction::async_delay_ms($n);
+        __tx
+    }};
+    (us, $n:expr) => {{
+        #[cfg(feature = "blocking")]
+        let __tx = DelayTransaction::delay_us($n);
+        #[cfg(feature = "async")]
+        let __tx = DelayTransaction::async_delay_us($n);
+        __tx
+    }};
+}
+
 fn spi_write(payload: &[u8]) -> Vec<SpiTransaction<u8>> {
     vec![
         SpiTransaction::transaction_start(),
@@ -62,24 +132,6 @@ fn spi_read_words(reg: u8, words: &[u16]) -> Vec<SpiTransaction<u8>> {
     ]
 }
 
-#[derive(Default, Debug)]
-struct TestDelay {
-    ms_calls: Vec<u32>,
-    us_calls: Vec<u32>,
-}
-
-impl DelayNs for TestDelay {
-    fn delay_ns(&mut self, _ns: u32) {}
-
-    fn delay_us(&mut self, us: u32) {
-        self.us_calls.push(us);
-    }
-
-    fn delay_ms(&mut self, ms: u32) {
-        self.ms_calls.push(ms);
-    }
-}
-
 #[test]
 fn spi_init_performs_dummy_chip_id_read_then_reads_device_state() {
     let mut expectations = Vec::new();
@@ -91,14 +143,19 @@ fn spi_init_performs_dummy_chip_id_read_then_reads_device_state() {
 
     let spi = SpiMock::new(&expectations);
     let mut imu = Bmi323::new_spi(spi);
-    let mut delay = TestDelay::default();
+    // SPI init: 2ms after soft-reset + 250µs after the dummy chip-id read
+    let mut delay = CheckedDelay::new(&[delay_tx!(ms, 2), delay_tx!(us, 250)]);
 
-    let state = imu.init(&mut delay).unwrap();
+    let state = run!(imu.init(&mut delay)).unwrap();
 
     assert_eq!(state.chip_id, BMI323_CHIP_ID as u8);
-    assert_eq!(delay.ms_calls, vec![2]);
-    assert_eq!(delay.us_calls, vec![250]);
+    assert!(state.status.por_detected());
+    assert!(state.status.drdy_temp());
+    assert!(state.status.drdy_gyro());
+    assert!(state.status.drdy_accel());
+    assert!(!state.error.fatal());
 
+    delay.done();
     let mut spi = imu.destroy();
     spi.done();
 }
@@ -135,8 +192,8 @@ fn spi_config_writes_use_expected_payload_format() {
     let spi = SpiMock::new(&expectations);
     let mut imu = Bmi323::new_spi(spi);
 
-    imu.set_accel_config(accel).unwrap();
-    imu.set_gyro_config(gyro).unwrap();
+    run!(imu.set_accel_config(accel)).unwrap();
+    run!(imu.set_gyro_config(gyro)).unwrap();
 
     assert_eq!(imu.accel_range(), AccelRange::G4);
     assert_eq!(imu.gyro_range(), GyroRange::Dps125);
@@ -156,7 +213,7 @@ fn spi_burst_read_decodes_dummy_byte_framing_correctly() {
     let spi = SpiMock::new(&expectations);
     let mut imu = Bmi323::new_spi(spi);
 
-    let sample = imu.read_imu_data().unwrap();
+    let sample = run!(imu.read_imu_data()).unwrap();
 
     assert_eq!(sample.accel.x, 0x1234);
     assert_eq!(sample.accel.y, -292);
@@ -165,6 +222,29 @@ fn spi_burst_read_decodes_dummy_byte_framing_correctly() {
     assert_eq!(sample.gyro.y, 32767);
     assert_eq!(sample.gyro.z, -256);
 
+    let mut spi = imu.destroy();
+    spi.done();
+}
+
+#[test]
+fn spi_feature_engine_enable_uses_expected_transaction_sequence() {
+    let mut expectations = Vec::new();
+    expectations.extend(spi_write(&[ACC_CONF, 0x00, 0x00]));
+    expectations.extend(spi_write(&[GYR_CONF, 0x00, 0x00]));
+    expectations.extend(spi_write(&[FEATURE_IO2, 0x2C, 0x01]));
+    expectations.extend(spi_write(&[FEATURE_IO_STATUS, 0x01, 0x00]));
+    expectations.extend(spi_write(&[FEATURE_CTRL, 0x01, 0x00]));
+    // Returns NO_ERROR (0x05) on first poll.
+    expectations.extend(spi_read_word(FEATURE_IO1, 0x0005));
+
+    let spi = SpiMock::new(&expectations);
+    let mut imu = Bmi323::new_spi(spi);
+    // The polling loop delays 200 µs before each read; returns on first poll.
+    let mut delay = CheckedDelay::new(&[delay_tx!(us, 200)]);
+
+    run!(imu.enable_feature_engine(&mut delay)).unwrap();
+
+    delay.done();
     let mut spi = imu.destroy();
     spi.done();
 }
@@ -200,27 +280,7 @@ fn spi_any_motion_configuration_uses_expected_feature_transactions() {
     let spi = SpiMock::new(&expectations);
     let mut imu = Bmi323::new_spi(spi);
 
-    imu.configure_any_motion(config).unwrap();
-
-    let mut spi = imu.destroy();
-    spi.done();
-}
-
-#[test]
-fn spi_feature_engine_enable_uses_expected_transaction_sequence() {
-    let mut expectations = Vec::new();
-    expectations.extend(spi_write(&[ACC_CONF, 0x00, 0x00]));
-    expectations.extend(spi_write(&[GYR_CONF, 0x00, 0x00]));
-    expectations.extend(spi_write(&[FEATURE_IO2, 0x2C, 0x01]));
-    expectations.extend(spi_write(&[FEATURE_IO_STATUS, 0x01, 0x00]));
-    expectations.extend(spi_write(&[FEATURE_CTRL, 0x01, 0x00]));
-    expectations.extend(spi_read_word(FEATURE_IO1, 0x0005));
-
-    let spi = SpiMock::new(&expectations);
-    let mut imu = Bmi323::new_spi(spi);
-    let mut delay = TestDelay::default();
-
-    imu.enable_feature_engine(&mut delay).unwrap();
+    run!(imu.configure_any_motion(config)).unwrap();
 
     let mut spi = imu.destroy();
     spi.done();
@@ -236,31 +296,28 @@ fn spi_self_test_uses_expected_sequence() {
     expectations.extend(spi_write(&[FEATURE_CTRL, 0x01, 0x00]));
     expectations.extend(spi_read_word(FEATURE_IO1, 0x0001));
     expectations.extend(spi_write(&[ACC_CONF, 0x29, 0x70]));
-    expectations.extend(spi_write(&[0x28, 0x00, 0x00]));
-    expectations.extend(spi_write(&[0x29, 0x00, 0x00]));
+    expectations.extend(spi_write(&[ALT_ACC_CONF, 0x00, 0x00]));
+    expectations.extend(spi_write(&[ALT_GYR_CONF, 0x00, 0x00]));
     expectations.extend(spi_write(&[FEATURE_DATA_ADDR, EXT_ST_SELECT as u8, 0x00]));
     expectations.extend(spi_write(&[FEATURE_DATA_TX, 0x03, 0x00]));
     expectations.extend(spi_write(&[CMD, 0x00, 0x01]));
+    // Self-test result ready on first poll → no 10ms poll delay.
     expectations.extend(spi_read_word(FEATURE_IO1, 0x0055));
     expectations.extend(spi_write(&[FEATURE_DATA_ADDR, EXT_ST_RESULT as u8, 0x00]));
     expectations.extend(spi_read_word(FEATURE_DATA_TX, 0x007F));
 
     let spi = SpiMock::new(&expectations);
     let mut imu = Bmi323::new_spi(spi);
-    let mut delay = TestDelay::default();
+    // enable_feature_engine: 1 poll → 1×200µs. Self-test ready on first poll → no ms delay.
+    let mut delay = CheckedDelay::new(&[delay_tx!(us, 200)]);
 
-    let result = imu
-        .run_self_test(&mut delay, SelfTestSelection::Both)
-        .unwrap();
+    let result = run!(imu.run_self_test(&mut delay, SelfTestSelection::Both)).unwrap();
 
     assert!(result.passed);
     assert!(result.accelerometer_ok());
     assert!(result.gyroscope_ok());
-    // Mock returns ready on first poll so no 10 ms self-test delays are issued;
-    // only the 200 µs inter-poll delays from enable_feature_engine are observed.
-    assert!(delay.us_calls.iter().any(|&us| us == 200));
-    assert!(delay.ms_calls.is_empty());
 
+    delay.done();
     let mut spi = imu.destroy();
     spi.done();
 }
