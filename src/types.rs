@@ -17,6 +17,12 @@ pub enum Error<E> {
     /// The BMI323 datasheet defines raw value 0x8000 as "invalid temperature";
     /// it is produced when no valid sample is available yet.
     InvalidTemperature,
+    /// The GPIO pin returned an error while waiting for an interrupt edge.
+    ///
+    /// Only produced by [`Bmi323::wait_for_interrupt`](crate::Bmi323::wait_for_interrupt).
+    /// The underlying GPIO error value is not preserved because the GPIO error
+    /// type is independent of the bus error type `E`.
+    GpioError,
 }
 
 /// Primary 7-bit BMI323 I2C address (§7.2.4.2).
