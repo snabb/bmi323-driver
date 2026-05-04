@@ -3,7 +3,7 @@ use core::pin::pin;
 use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
 
 use bmi323_driver::{
-    AccelConfig, AccelMode, AccelRange, Bmi323Async, GyroConfig, GyroMode, GyroRange,
+    AccelConfig, AccelMode, AccelRange, Bmi323, GyroConfig, GyroMode, GyroRange,
     OutputDataRate, SelfTestSelection,
 };
 use embedded_hal_mock::eh1::delay::{CheckedDelay, Transaction as DelayTransaction};
@@ -100,7 +100,7 @@ fn async_spi_init_performs_dummy_chip_id_read_then_reads_device_state() {
     expectations.extend(spi_read_word(STATUS, 0x00E1));
 
     let spi = SpiMock::new(&expectations);
-    let mut imu = Bmi323Async::new_spi(spi);
+    let mut imu = Bmi323::new_spi(spi);
     let mut delay = CheckedDelay::new(&[
         DelayTransaction::async_delay_ms(2),
         DelayTransaction::async_delay_us(250),
@@ -152,7 +152,7 @@ fn async_spi_config_and_burst_read_use_expected_payload_format() {
     ));
 
     let spi = SpiMock::new(&expectations);
-    let mut imu = Bmi323Async::new_spi(spi);
+    let mut imu = Bmi323::new_spi(spi);
 
     block_on(imu.set_accel_config(accel)).unwrap();
     block_on(imu.set_gyro_config(gyro)).unwrap();
@@ -201,7 +201,7 @@ fn async_spi_self_test_uses_expected_sequence_and_restores_configuration() {
     expectations.extend(spi_write(&[FEATURE_DATA_TX, 0x03, 0x00]));
 
     let spi = SpiMock::new(&expectations);
-    let mut imu = Bmi323Async::new_spi(spi);
+    let mut imu = Bmi323::new_spi(spi);
     // enable_feature_engine polls once (returns ready) before the self-test loop,
     // which also returns on first read; so only 1 inter-poll delay is observed.
     let mut delay = CheckedDelay::new(&[DelayTransaction::async_delay_us(200)]);

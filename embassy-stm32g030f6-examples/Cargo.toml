@@ -5,7 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
-bmi323-driver = { path = "..", features = ["defmt"] }
+bmi323-driver = { path = "..", default-features = false, features = ["async", "defmt"] }
 cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
 cortex-m-rt = "0.7"
 defmt = "1.0.1"

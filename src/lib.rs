@@ -2,7 +2,7 @@
 //!
 //! This crate provides:
 //!
-//! - blocking and async drivers
+//! - blocking and async drivers (selected by Cargo feature)
 //! - I2C and SPI transport support
 //! - accelerometer and gyroscope configuration
 //! - burst sample reads
@@ -20,12 +20,20 @@
 //! It does not own the external interrupt GPIO. This keeps the driver generic and
 //! makes it easy to use with Embassy or with a platform-specific interrupt layer.
 //!
-//! # Driver variants
+//! # Blocking vs async
 //!
-//! - [`Bmi323`] is the blocking driver.
-//! - [`Bmi323Async`] is the async driver.
+//! Select exactly one Cargo feature:
 //!
-//! Both expose the same high-level BMI323 operations where practical.
+//! - `blocking` (default) — all [`Bmi323`] methods are regular synchronous `fn`.
+//!   Uses `embedded-hal` 1.0 I2C/SPI/delay traits.
+//! - `async` — all [`Bmi323`] methods are `async fn`.
+//!   Uses `embedded-hal-async` 1.0 traits. Required for Embassy.
+//!
+//! Enabling both features simultaneously is a compile error.
+//!
+//! # Driver
+//!
+//! [`Bmi323`] exposes the same high-level BMI323 operations in both modes.
 //!
 //! # Transport model
 //!
@@ -42,7 +50,7 @@
 //! - in blocking applications, poll the GPIO or an MCU interrupt flag yourself,
 //!   then call [`Bmi323::read_interrupt_status`]
 //! - in async applications, either wait on the GPIO yourself or use
-//!   [`Bmi323Async::wait_for_interrupt`] with a pin implementing
+//!   [`Bmi323::wait_for_interrupt`] with a pin implementing
 //!   [`embedded_hal_async::digital::Wait`]
 //!
 //! # Feature engine note
@@ -65,12 +73,11 @@
 //!
 //! # Startup configuration
 //!
-//! [`Bmi323::init`] and [`Bmi323Async::init`] perform a soft reset so the
-//! sensor starts from a known state. After that reset, this driver does not
-//! assume the accelerometer or gyroscope are configured for your application.
-//! In practice, you should call [`Bmi323::set_accel_config`] and
-//! [`Bmi323::set_gyro_config`] or their async equivalents before relying on
-//! accelerometer or gyroscope sample reads.
+//! [`Bmi323::init`] performs a soft reset so the sensor starts from a known
+//! state. After that reset, this driver does not assume the accelerometer or
+//! gyroscope are configured for your application. In practice, you should call
+//! [`Bmi323::set_accel_config`] and [`Bmi323::set_gyro_config`] before relying
+//! on accelerometer or gyroscope sample reads.
 //!
 //! The driver tracks local range fields initialized to `AccelRange::G2` and
 //! `GyroRange::Dps125` to match the BMI323 power-on reset defaults
@@ -79,7 +86,12 @@
 //!
 //! # Example: blocking I2C
 //!
+//! Requires `features = ["blocking"]` (the default).
+//!
 //! ```no_run
+//! # #[cfg(feature = "async")] fn main() {}
+//! # #[cfg(not(feature = "async"))]
+//! # fn main() {
 //! use bmi323_driver::{
 //!     AccelConfig, AccelMode, AccelRange, AverageSamples, Bandwidth, Bmi323,
 //!     GyroConfig, GyroMode, GyroRange, I2C_ADDRESS_PRIMARY, OutputDataRate,
@@ -112,14 +124,20 @@
 //!     let _ = (accel_g, gyro_dps);
 //!     Ok(())
 //! }
+//! # }
 //! ```
 //!
 //! # Example: async interrupt-driven usage
 //!
+//! Requires `features = ["async"]`.
+//!
 //! ```no_run
+//! # #[cfg(not(feature = "async"))] fn main() {}
+//! # #[cfg(feature = "async")]
+//! # fn main() {
 //! use bmi323_driver::{
 //!     AccelConfig, AccelMode, AccelRange, ActiveLevel, AnyMotionConfig,
-//!     AverageSamples, Bandwidth, Bmi323Async, EventReportMode,
+//!     AverageSamples, Bandwidth, Bmi323, EventReportMode,
 //!     I2C_ADDRESS_PRIMARY, InterruptChannel, InterruptPinConfig,
 //!     InterruptRoute, InterruptSource, MotionAxes, OutputDataRate, OutputMode,
 //!     ReferenceUpdate,
@@ -138,7 +156,7 @@
 //!     D: DelayNs,
 //!     P: Wait,
 //! {
-//!     let mut imu = Bmi323Async::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
+//!     let mut imu = Bmi323::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
 //!     imu.init(delay).await?;
 //!     imu.enable_feature_engine(delay).await?;
 //!     imu.set_accel_config(AccelConfig {
@@ -174,24 +192,21 @@
 //!     }
 //!     Ok(())
 //! }
+//! # }
 //! ```
 #![no_std]
 
 #[cfg(test)]
 extern crate std;
 
-mod async_driver;
-mod blocking_driver;
 mod driver;
+mod driver_impl;
 mod registers;
 mod transport;
 mod types;
 
-pub use driver::{Bmi323, Bmi323Async};
-pub use transport::{
-    AsyncAccess, AsyncI2cTransport, AsyncSpiTransport, MAX_WORDS_PER_READ, SyncAccess,
-    SyncI2cTransport, SyncSpiTransport,
-};
+pub use driver::Bmi323;
+pub use transport::{Access, I2cTransport, MAX_WORDS_PER_READ, SpiTransport};
 pub use types::*;
 
 #[cfg(test)]

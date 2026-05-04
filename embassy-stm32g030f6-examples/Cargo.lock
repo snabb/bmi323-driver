@@ -79,11 +79,12 @@ dependencies = [
 
 [[package]]
 name = "bmi323-driver"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "defmt 1.0.1",
  "embedded-hal 1.0.0",
  "embedded-hal-async",
+ "maybe-async",
 ]
 
 [[package]]
@@ -698,6 +699,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d1525a2a28c7f4fa0fc98bb91ae755d1e2d1505079e05539e35bc876b5d65ae9"
 dependencies = [
  "regex-automata",
+]
+
+[[package]]
+name = "maybe-async"
+version = "0.2.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5cf92c10c7e361d6b99666ec1c6f9805b0bea2c3bd8c78dc6fe98ac5bd78db11"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]

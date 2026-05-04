@@ -2,7 +2,7 @@
 #![no_main]
 
 use bmi323_driver::{
-    AccelConfig, AccelMode, ActiveLevel, AnyMotionConfig, Bmi323Async, EventReportMode,
+    AccelConfig, AccelMode, ActiveLevel, AnyMotionConfig, Bmi323, EventReportMode,
     I2C_ADDRESS_PRIMARY, InterruptChannel, InterruptPinConfig, InterruptRoute, InterruptSource,
     MotionAxes, OutputDataRate, OutputMode, ReferenceUpdate,
 };
@@ -43,7 +43,7 @@ async fn main(_spawner: Spawner) {
     let mut int1 = ExtiInput::new(p.PB3, p.EXTI3, Pull::Down, Irqs);
     let mut delay = Delay;
 
-    let mut imu = Bmi323Async::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
+    let mut imu = Bmi323::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
 
     if let Err(err) = imu.init(&mut delay).await {
         error!("BMI323 init failed: {:?}", err);
