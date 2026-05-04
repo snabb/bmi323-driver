@@ -1513,6 +1513,11 @@ pub struct AnyMotionConfig {
     pub interrupt_hold: u8,
 }
 
+/// Maximum valid value for the interrupt hold-time exponent field shared across feature-engine
+/// blocks (`gen_set_1` bits[4:1]). Values 14–15 are undefined; the field is clamped to this
+/// maximum before being written to the register (§6.2.2, Register (0x02) gen_set_1).
+pub(crate) const INTERRUPT_HOLD_MAX: u8 = 13;
+
 impl AnyMotionConfig {
     /// Convert a physical threshold in `g` to the BMI323 field encoding.
     pub fn threshold_from_g(g: f32) -> u16 {
@@ -1567,7 +1572,7 @@ impl AnyMotionConfig {
     pub fn interrupt_hold_from_millis(millis: f32) -> u8 {
         let mut encoded = 0u8;
         let mut hold_ms = 0.625f32;
-        while hold_ms < millis && encoded < 13 {
+        while hold_ms < millis && encoded < INTERRUPT_HOLD_MAX {
             encoded += 1;
             hold_ms *= 2.0;
         }
@@ -1578,7 +1583,7 @@ impl AnyMotionConfig {
     pub fn interrupt_hold_to_millis(raw: u8) -> f32 {
         let mut hold_ms = 0.625f32;
         let mut encoded = 0u8;
-        while encoded < raw.min(13) {
+        while encoded < raw.min(INTERRUPT_HOLD_MAX) {
             hold_ms *= 2.0;
             encoded += 1;
         }
