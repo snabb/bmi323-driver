@@ -82,34 +82,45 @@ pub(crate) const FEATURE_CTRL_ENABLE: u16 = 0x0001;
 pub(crate) const FIFO_CTRL_FLUSH: u16 = 0x0001;
 
 /// `FEATURE_IO1.error_status` values (§6.1.2, Register (0x11) feature_io1).
+#[allow(dead_code)]
 pub(crate) const FEATURE_ENGINE_STATUS_INACTIVE: u8 = 0x00;
 /// Feature engine activated (transitions from `INACTIVE` after `enable_feature_engine`).
 pub(crate) const FEATURE_ENGINE_STATUS_ACTIVATED: u8 = 0x01;
 /// Configuration string download failed.
+#[allow(dead_code)]
 pub(crate) const FEATURE_ENGINE_STATUS_CONFIG_FAILED: u8 = 0x03;
 /// No error — normal running state.
 pub(crate) const FEATURE_ENGINE_STATUS_NO_ERROR: u8 = 0x05;
 /// Axis map command rejected: a sensor was active or self-calibration/self-test was ongoing.
+#[allow(dead_code)]
 pub(crate) const FEATURE_ENGINE_STATUS_AXIS_MAP_REJECTED: u8 = 0x06;
 /// I3C TC-sync error: enable request sent while auto-low-power was active, or configuration
 /// sent with invalid TPH/TU/ODR values.
+#[allow(dead_code)]
 pub(crate) const FEATURE_ENGINE_STATUS_I3C_SYNC_ERROR: u8 = 0x08;
 /// Ongoing self-calibration or self-test was aborted (movement, abort command, or I3C request).
+#[allow(dead_code)]
 pub(crate) const FEATURE_ENGINE_STATUS_OPERATION_ABORTED: u8 = 0x09;
 /// Self-calibration command ignored: self-calibration, self-test, or I3C TC-sync was ongoing.
+#[allow(dead_code)]
 pub(crate) const FEATURE_ENGINE_STATUS_CALIBRATION_IGNORED: u8 = 0x0A;
 /// Self-test command ignored: self-calibration, self-test, or I3C TC-sync was ongoing.
+#[allow(dead_code)]
 pub(crate) const FEATURE_ENGINE_STATUS_SELF_TEST_IGNORED: u8 = 0x0B;
 /// Self-calibration or self-test pre-conditions not met: accelerometer not configured correctly
 /// or auto-low-power feature was active.
+#[allow(dead_code)]
 pub(crate) const FEATURE_ENGINE_STATUS_PRECONDITION_FAILED: u8 = 0x0C;
 /// Illegal sensor configuration change in ACC_CONF/GYR_CONF during self-calibration or
 /// self-test; results may be inaccurate.
+#[allow(dead_code)]
 pub(crate) const FEATURE_ENGINE_STATUS_ILLEGAL_CONFIG_CHANGE: u8 = 0x0D;
 /// I3C TC-sync enable request received during self-test; sync will be enabled after self-test.
+#[allow(dead_code)]
 pub(crate) const FEATURE_ENGINE_STATUS_I3C_SYNC_PENDING: u8 = 0x0E;
 /// Illegal sensor configuration change while I3C TC-sync was active; sensors reconfigured to
 /// the requested I3C TC-sync ODR.
+#[allow(dead_code)]
 pub(crate) const FEATURE_ENGINE_STATUS_I3C_SYNC_RECONFIGURED: u8 = 0x0F;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
