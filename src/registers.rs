@@ -77,6 +77,9 @@ pub(crate) const FEATURE_IO_STATUS_SYNC: u16 = 0x0001;
 /// Feature-engine enable bit written to FEATURE_CTRL
 /// (§6.1.2, Register (0x40) feature_ctrl, `engine_en` bit 0).
 pub(crate) const FEATURE_CTRL_ENABLE: u16 = 0x0001;
+/// FIFO flush command written to FIFO_CTRL
+/// (§6.1.2, Register (0x37) fifo_ctrl, `fifo_flush` bit 0; §5.7.4).
+pub(crate) const FIFO_CTRL_FLUSH: u16 = 0x0001;
 
 /// `FEATURE_IO1.error_status` values (§6.1.2, Register (0x11) feature_io1).
 pub(crate) const FEATURE_ENGINE_STATUS_INACTIVE: u8 = 0x00;

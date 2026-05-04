@@ -10,7 +10,7 @@ use crate::registers::{
     EXT_SC_1, EXT_SIGMO_1, EXT_SIGMO_2, EXT_SIGMO_3, EXT_ST_RESULT, EXT_ST_SELECT, EXT_TAP_1,
     EXT_TAP_2, EXT_TAP_3, EXT_TILT_1, EXT_TILT_2, FEATURE_CTRL, FEATURE_CTRL_ENABLE,
     FEATURE_DATA_ADDR, FEATURE_DATA_TX, FEATURE_ENGINE_CONFIG, FEATURE_ENGINE_STATUS_ACTIVATED,
-    FEATURE_ENGINE_STATUS_NO_ERROR, FEATURE_IO_STATUS,
+    FEATURE_ENGINE_STATUS_NO_ERROR, FIFO_CTRL_FLUSH, FEATURE_IO_STATUS,
     FEATURE_IO_STATUS_SYNC, FEATURE_IO0, FEATURE_IO1, FEATURE_IO2, FEATURE_IO3, FIFO_CONF,
     FIFO_CTRL, FIFO_DATA, FIFO_FILL_LEVEL, FIFO_WATERMARK, GYR_CONF, GYR_DATA_X, INT_CONF,
     INT_STATUS_IBI, INT_STATUS_INT1, INT_STATUS_INT2, IO_INT_CTRL, SELF_TEST, SENSOR_TIME_0,
@@ -20,8 +20,8 @@ use crate::{
     AccelConfig, ActiveLevel, AltAccelConfig, AltConfigControl, AltGyroConfig, AltStatus,
     AnyMotionConfig, Access, AxisData, Bmi323, DeviceState, Error, ErrorWord, EventReportMode,
     FifoConfig, FlatConfig, GyroConfig, ImuData, InterruptChannel, InterruptPinConfig,
-    InterruptRoute, InterruptSource, InterruptStatus, NoMotionConfig, OrientationConfig,
-    OutputDataRate, OutputMode, ReferenceUpdate, SelfTestDetail, SelfTestResult,
+    InterruptRoute, InterruptSource, InterruptStatus, INTERRUPT_HOLD_MAX, NoMotionConfig,
+    OrientationConfig, OutputDataRate, OutputMode, ReferenceUpdate, SelfTestDetail, SelfTestResult,
     SelfTestSelection, SignificantMotionConfig, StatusWord, StepCounterConfig, TapConfig,
     TiltConfig,
 };
@@ -364,8 +364,7 @@ where
 
     /// Flush all currently buffered FIFO contents.
     pub async fn flush_fifo(&mut self) -> Result<(), Error<<Self as Access>::BusError>> {
-        // Writing 0x0001 to FIFO_CTRL triggers a FIFO flush (§5.7.4; §6.1.2, Register (0x37) fifo_ctrl)
-        self.write_word(FIFO_CTRL, 0x0001).await.map_err(Error::Bus)
+        self.write_word(FIFO_CTRL, FIFO_CTRL_FLUSH).await.map_err(Error::Bus)
     }
 
     /// Read raw FIFO words into the provided output slice.
@@ -891,7 +890,7 @@ where
                 EventReportMode::AllEvents => 0,
                 EventReportMode::FirstEventOnly => 1,
             };
-            updated |= ((interrupt_hold.min(13) as u16) & 0x0F) << 1;
+            updated |= ((interrupt_hold.min(INTERRUPT_HOLD_MAX) as u16) & 0x0F) << 1;
             updated
         })
         .await
