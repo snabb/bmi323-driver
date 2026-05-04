@@ -78,12 +78,36 @@ pub(crate) const FEATURE_IO_STATUS_SYNC: u16 = 0x0001;
 /// (§6.1.2, Register (0x40) feature_ctrl, `engine_en` bit 0).
 pub(crate) const FEATURE_CTRL_ENABLE: u16 = 0x0001;
 
-/// `FEATURE_IO1` `error_status` value indicating the feature engine finished
-/// initializing successfully (§6.1.2, Register (0x11) feature_io1).
-pub(crate) const FEATURE_ENGINE_STATUS_INIT_OK: u8 = 0x01;
-/// `FEATURE_IO1` `error_status` value indicating the feature engine is active
-/// with no errors — the normal running state (§6.1.2, Register (0x11) feature_io1).
+/// `FEATURE_IO1.error_status` values (§6.1.2, Register (0x11) feature_io1).
+pub(crate) const FEATURE_ENGINE_STATUS_INACTIVE: u8 = 0x00;
+/// Feature engine activated (transitions from `INACTIVE` after `enable_feature_engine`).
+pub(crate) const FEATURE_ENGINE_STATUS_ACTIVATED: u8 = 0x01;
+/// Configuration string download failed.
+pub(crate) const FEATURE_ENGINE_STATUS_CONFIG_FAILED: u8 = 0x03;
+/// No error — normal running state.
 pub(crate) const FEATURE_ENGINE_STATUS_NO_ERROR: u8 = 0x05;
+/// Axis map command rejected: a sensor was active or self-calibration/self-test was ongoing.
+pub(crate) const FEATURE_ENGINE_STATUS_AXIS_MAP_REJECTED: u8 = 0x06;
+/// I3C TC-sync error: enable request sent while auto-low-power was active, or configuration
+/// sent with invalid TPH/TU/ODR values.
+pub(crate) const FEATURE_ENGINE_STATUS_I3C_SYNC_ERROR: u8 = 0x08;
+/// Ongoing self-calibration or self-test was aborted (movement, abort command, or I3C request).
+pub(crate) const FEATURE_ENGINE_STATUS_OPERATION_ABORTED: u8 = 0x09;
+/// Self-calibration command ignored: self-calibration, self-test, or I3C TC-sync was ongoing.
+pub(crate) const FEATURE_ENGINE_STATUS_CALIBRATION_IGNORED: u8 = 0x0A;
+/// Self-test command ignored: self-calibration, self-test, or I3C TC-sync was ongoing.
+pub(crate) const FEATURE_ENGINE_STATUS_SELF_TEST_IGNORED: u8 = 0x0B;
+/// Self-calibration or self-test pre-conditions not met: accelerometer not configured correctly
+/// or auto-low-power feature was active.
+pub(crate) const FEATURE_ENGINE_STATUS_PRECONDITION_FAILED: u8 = 0x0C;
+/// Illegal sensor configuration change in ACC_CONF/GYR_CONF during self-calibration or
+/// self-test; results may be inaccurate.
+pub(crate) const FEATURE_ENGINE_STATUS_ILLEGAL_CONFIG_CHANGE: u8 = 0x0D;
+/// I3C TC-sync enable request received during self-test; sync will be enabled after self-test.
+pub(crate) const FEATURE_ENGINE_STATUS_I3C_SYNC_PENDING: u8 = 0x0E;
+/// Illegal sensor configuration change while I3C TC-sync was active; sensors reconfigured to
+/// the requested I3C TC-sync ODR.
+pub(crate) const FEATURE_ENGINE_STATUS_I3C_SYNC_RECONFIGURED: u8 = 0x0F;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum TransportKind {
