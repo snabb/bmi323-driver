@@ -801,7 +801,7 @@ where
         .map_err(Error::Bus)?;
         self.write_feature_word(
             EXT_ALT_CONFIG_CHG,
-            (config.switch_to_alternate as u16) | ((config.switch_to_user as u16) << 4),
+            (config.switch_to_alternate as u16 & 0x0F) | ((config.switch_to_user as u16 & 0x0F) << 4),
         )
         .await
     }
