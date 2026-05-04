@@ -619,10 +619,11 @@ impl From<InterruptRoute> for u16 {
 
 /// Electrical active level for an interrupt output pin
 /// (§6.1.2, Register (0x38) io_int_ctrl `int1_lvl`/`int2_lvl`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ActiveLevel {
     /// Active-low signaling.
+    #[default]
     Low = 0,
     /// Active-high signaling.
     High = 1,
@@ -630,17 +631,18 @@ pub enum ActiveLevel {
 
 /// Electrical driver mode for an interrupt output pin
 /// (§6.1.2, Register (0x38) io_int_ctrl `int1_od`/`int2_od`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum OutputMode {
     /// Push-pull output driver.
+    #[default]
     PushPull = 0,
     /// Open-drain output driver.
     OpenDrain = 1,
 }
 
 /// Electrical configuration for `INT1` or `INT2` (§6.1.2, Register (0x38) io_int_ctrl).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct InterruptPinConfig {
     /// Active signaling level.
@@ -734,6 +736,12 @@ pub struct StepCounterConfig {
     /// wants a fresh accumulated count after initialization or after reading a
     /// previous session's result.
     pub reset_counter: bool,
+}
+
+impl Default for StepCounterConfig {
+    fn default() -> Self {
+        Self::disabled()
+    }
 }
 
 impl StepCounterConfig {
@@ -1464,6 +1472,13 @@ impl MotionAxes {
         y: true,
         z: true,
     };
+}
+
+impl Default for MotionAxes {
+    /// Defaults to all axes enabled (`XYZ`), the only meaningful starting point for motion detection.
+    fn default() -> Self {
+        Self::XYZ
+    }
 }
 
 /// Configuration for the BMI323 any-motion feature
