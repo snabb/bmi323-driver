@@ -9,7 +9,8 @@ use crate::registers::{
     EXT_FLAT_2, EXT_GEN_SET_1, EXT_NOMO_1, EXT_NOMO_2, EXT_NOMO_3, EXT_ORIENT_1, EXT_ORIENT_2,
     EXT_SC_1, EXT_SIGMO_1, EXT_SIGMO_2, EXT_SIGMO_3, EXT_ST_RESULT, EXT_ST_SELECT, EXT_TAP_1,
     EXT_TAP_2, EXT_TAP_3, EXT_TILT_1, EXT_TILT_2, FEATURE_CTRL, FEATURE_CTRL_ENABLE,
-    FEATURE_DATA_ADDR, FEATURE_DATA_TX, FEATURE_ENGINE_CONFIG, FEATURE_IO_STATUS,
+    FEATURE_DATA_ADDR, FEATURE_DATA_TX, FEATURE_ENGINE_CONFIG, FEATURE_ENGINE_STATUS_INIT_OK,
+    FEATURE_ENGINE_STATUS_NO_ERROR, FEATURE_IO_STATUS,
     FEATURE_IO_STATUS_SYNC, FEATURE_IO0, FEATURE_IO1, FEATURE_IO2, FEATURE_IO3, FIFO_CONF,
     FIFO_CTRL, FIFO_DATA, FIFO_FILL_LEVEL, FIFO_WATERMARK, GYR_CONF, GYR_DATA_X, INT_CONF,
     INT_STATUS_IBI, INT_STATUS_INT1, INT_STATUS_INT2, IO_INT_CTRL, SELF_TEST, SENSOR_TIME_0,
@@ -92,8 +93,8 @@ where
     /// methods needed before resuming normal sensor operation.
     ///
     /// The returned [`SelfTestResult::error_status`] comes from
-    /// `FEATURE_IO1.error_status`. On the BMI323, `0x5` is the normal
-    /// "no error" value after the feature engine is active.
+    /// `FEATURE_IO1.error_status`. The normal value after the feature engine
+    /// is active is `FEATURE_ENGINE_STATUS_NO_ERROR` (`0x05`).
     pub async fn run_self_test<D: DelayNs>(
         &mut self,
         delay: &mut D,
@@ -418,7 +419,7 @@ where
             delay.delay_us(200).await;
             let io1 = self.read_word(FEATURE_IO1).await.map_err(Error::Bus)?;
             let status = (io1 & 0x000F) as u8;
-            if status == 0x1 || status == 0x5 {
+            if status == FEATURE_ENGINE_STATUS_INIT_OK || status == FEATURE_ENGINE_STATUS_NO_ERROR {
                 return Ok(());
             }
         }
