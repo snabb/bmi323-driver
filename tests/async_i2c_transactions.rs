@@ -358,14 +358,8 @@ fn async_i2c_configure_alt_config_control_writes_sensor_and_feature_words() {
 }
 
 #[test]
-fn async_i2c_self_test_uses_expected_sequence_and_restores_configuration() {
+fn async_i2c_self_test_uses_expected_sequence() {
     let expectations = [
-        read_word(ACC_CONF, 0x4127),
-        read_word(GYR_CONF, 0x4047),
-        read_word(ALT_ACC_CONF, 0x7208),
-        read_word(ALT_GYR_CONF, 0x4108),
-        write_word(FEATURE_DATA_ADDR, EXT_ST_SELECT),
-        read_word(FEATURE_DATA_TX, 0x0003),
         write_word(ACC_CONF, 0x0000),
         write_word(GYR_CONF, 0x0000),
         write_word(FEATURE_IO2, 0x012C),
@@ -381,12 +375,6 @@ fn async_i2c_self_test_uses_expected_sequence_and_restores_configuration() {
         read_word(FEATURE_IO1, 0x0055),
         write_word(FEATURE_DATA_ADDR, EXT_ST_RESULT),
         read_word(FEATURE_DATA_TX, 0x0078),
-        write_word(ACC_CONF, 0x4127),
-        write_word(GYR_CONF, 0x4047),
-        write_word(ALT_ACC_CONF, 0x7208),
-        write_word(ALT_GYR_CONF, 0x4108),
-        write_word(FEATURE_DATA_ADDR, EXT_ST_SELECT),
-        write_word(FEATURE_DATA_TX, 0x0003),
     ];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
@@ -1026,47 +1014,6 @@ fn async_i2c_alt_status_reads_alt_status_register() {
 }
 
 #[test]
-fn async_i2c_run_self_test_returns_restore_error_when_restore_configuration_fails() {
-    let expectations = [
-        read_word(ACC_CONF, 0x4127),
-        read_word(GYR_CONF, 0x4047),
-        read_word(ALT_ACC_CONF, 0x7208),
-        read_word(ALT_GYR_CONF, 0x4108),
-        write_word(FEATURE_DATA_ADDR, EXT_ST_SELECT),
-        read_word(FEATURE_DATA_TX, 0x0003),
-        write_word(ACC_CONF, 0x0000),
-        write_word(GYR_CONF, 0x0000),
-        write_word(FEATURE_IO2, 0x012C),
-        write_word(FEATURE_IO_STATUS, 0x0001),
-        write_word(FEATURE_CTRL, 0x0001),
-        read_word(FEATURE_IO1, 0x0001),
-        write_word(ACC_CONF, 0x7029),
-        write_word(ALT_ACC_CONF, 0x0000),
-        write_word(ALT_GYR_CONF, 0x0000),
-        write_word(FEATURE_DATA_ADDR, EXT_ST_SELECT),
-        write_word(FEATURE_DATA_TX, SelfTestSelection::Gyroscope.to_word()),
-        write_word(CMD, 0x0100),
-        read_word(FEATURE_IO1, 0x0055),
-        write_word(FEATURE_DATA_ADDR, EXT_ST_RESULT),
-        read_word(FEATURE_DATA_TX, 0x0078),
-        // restore fails: first write (ACC_CONF restore) returns an error
-        I2cTransaction::write(ADDR, vec![ACC_CONF, 0x27, 0x41]).with_error(I2cErrorKind::Other),
-    ];
-    let i2c = I2cMock::new(&expectations);
-    let mut imu = Bmi323::new_i2c(i2c, ADDR);
-    // enable_feature_engine polls once (returns ready) before the self-test loop,
-    // which also returns on first read; so only 1 inter-poll delay is observed.
-    let mut delay = CheckedDelay::new(&[DelayTransaction::async_delay_us(200)]);
-
-    let result = block_on(imu.run_self_test(&mut delay, SelfTestSelection::Gyroscope));
-
-    assert!(matches!(result, Err(bmi323_driver::Error::Bus(_))));
-    delay.done();
-    let mut i2c = imu.destroy();
-    i2c.done();
-}
-
-#[test]
 fn async_i2c_enable_feature_engine_returns_error_when_never_ready() {
     let mut expectations = vec![
         write_word(ACC_CONF, 0x0000),
@@ -1100,12 +1047,6 @@ fn async_i2c_enable_feature_engine_returns_error_when_never_ready() {
 #[test]
 fn async_i2c_run_self_test_accelerometer_selection_times_out_when_feature_never_signals() {
     let mut expectations = vec![
-        read_word(ACC_CONF, 0x4127),
-        read_word(GYR_CONF, 0x4047),
-        read_word(ALT_ACC_CONF, 0x7208),
-        read_word(ALT_GYR_CONF, 0x4108),
-        write_word(FEATURE_DATA_ADDR, EXT_ST_SELECT),
-        read_word(FEATURE_DATA_TX, 0x0003),
         // enable_feature_engine: success on first read
         write_word(ACC_CONF, 0x0000),
         write_word(GYR_CONF, 0x0000),
@@ -1126,13 +1067,6 @@ fn async_i2c_run_self_test_accelerometer_selection_times_out_when_feature_never_
         delay_transactions.push(DelayTransaction::async_delay_ms(10));
         expectations.push(read_word(FEATURE_IO1, 0x0000));
     }
-    // restore_self_test_configuration
-    expectations.push(write_word(ACC_CONF, 0x4127));
-    expectations.push(write_word(GYR_CONF, 0x4047));
-    expectations.push(write_word(ALT_ACC_CONF, 0x7208));
-    expectations.push(write_word(ALT_GYR_CONF, 0x4108));
-    expectations.push(write_word(FEATURE_DATA_ADDR, EXT_ST_SELECT));
-    expectations.push(write_word(FEATURE_DATA_TX, 0x0003));
 
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);

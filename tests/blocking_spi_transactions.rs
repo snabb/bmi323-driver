@@ -227,14 +227,8 @@ fn spi_feature_engine_enable_uses_expected_transaction_sequence() {
 }
 
 #[test]
-fn spi_self_test_uses_expected_sequence_and_restores_configuration() {
+fn spi_self_test_uses_expected_sequence() {
     let mut expectations = Vec::new();
-    expectations.extend(spi_read_word(ACC_CONF, 0x4127));
-    expectations.extend(spi_read_word(GYR_CONF, 0x4047));
-    expectations.extend(spi_read_word(0x28, 0x7208));
-    expectations.extend(spi_read_word(0x29, 0x4108));
-    expectations.extend(spi_write(&[FEATURE_DATA_ADDR, EXT_ST_SELECT as u8, 0x00]));
-    expectations.extend(spi_read_word(FEATURE_DATA_TX, 0x0003));
     expectations.extend(spi_write(&[ACC_CONF, 0x00, 0x00]));
     expectations.extend(spi_write(&[GYR_CONF, 0x00, 0x00]));
     expectations.extend(spi_write(&[FEATURE_IO2, 0x2C, 0x01]));
@@ -250,12 +244,6 @@ fn spi_self_test_uses_expected_sequence_and_restores_configuration() {
     expectations.extend(spi_read_word(FEATURE_IO1, 0x0055));
     expectations.extend(spi_write(&[FEATURE_DATA_ADDR, EXT_ST_RESULT as u8, 0x00]));
     expectations.extend(spi_read_word(FEATURE_DATA_TX, 0x007F));
-    expectations.extend(spi_write(&[ACC_CONF, 0x27, 0x41]));
-    expectations.extend(spi_write(&[GYR_CONF, 0x47, 0x40]));
-    expectations.extend(spi_write(&[0x28, 0x08, 0x72]));
-    expectations.extend(spi_write(&[0x29, 0x08, 0x41]));
-    expectations.extend(spi_write(&[FEATURE_DATA_ADDR, EXT_ST_SELECT as u8, 0x00]));
-    expectations.extend(spi_write(&[FEATURE_DATA_TX, 0x03, 0x00]));
 
     let spi = SpiMock::new(&expectations);
     let mut imu = Bmi323::new_spi(spi);

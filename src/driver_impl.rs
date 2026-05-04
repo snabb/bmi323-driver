@@ -83,9 +83,13 @@ where
     ///
     /// For gyroscope self-test, the BMI323 requires the accelerometer to be in
     /// high-performance mode with an output data rate between `12.5 Hz` and
-    /// `200 Hz`. This method enforces that prerequisite temporarily when needed
-    /// and restores the previous accel/gyro and alternate-configuration
-    /// registers afterwards.
+    /// `200 Hz`. This method enforces that prerequisite when needed.
+    ///
+    /// The self-test modifies the accel/gyro configuration registers and the
+    /// feature engine state. After this method returns, the sensor configuration
+    /// is in an undefined state. Call [`set_accel_config`](Self::set_accel_config),
+    /// [`set_gyro_config`](Self::set_gyro_config), and any other configuration
+    /// methods needed before resuming normal sensor operation.
     ///
     /// The returned [`SelfTestResult::error_status`] comes from
     /// `FEATURE_IO1.error_status`. On the BMI323, `0x5` is the normal
@@ -95,33 +99,47 @@ where
         delay: &mut D,
         selection: SelfTestSelection,
     ) -> Result<SelfTestResult, Error<<Self as Access>::BusError>> {
-        let saved_acc_conf = self.read_word(ACC_CONF).await.map_err(Error::Bus)?;
-        let saved_gyr_conf = self.read_word(GYR_CONF).await.map_err(Error::Bus)?;
-        let saved_alt_acc_conf = self.read_word(ALT_ACC_CONF).await.map_err(Error::Bus)?;
-        let saved_alt_gyr_conf = self.read_word(ALT_GYR_CONF).await.map_err(Error::Bus)?;
-        let saved_st_select = self.read_feature_word(EXT_ST_SELECT).await?;
-        let saved_accel_range = self.accel_range;
-        let saved_gyro_range = self.gyro_range;
+        self.enable_feature_engine(delay).await?;
 
-        let result = self.run_self_test_inner(delay, selection).await;
-        let restore = self
-            .restore_self_test_configuration(
-                saved_acc_conf,
-                saved_gyr_conf,
-                saved_alt_acc_conf,
-                saved_alt_gyr_conf,
-                saved_st_select,
+        if selection.tests_gyroscope() {
+            self.write_word(
+                ACC_CONF,
+                AccelConfig {
+                    mode: crate::AccelMode::HighPerformance,
+                    odr: OutputDataRate::Hz200,
+                    ..Default::default()
+                }
+                .to_word(),
             )
-            .await;
-
-        self.accel_range = saved_accel_range;
-        self.gyro_range = saved_gyro_range;
-
-        match (result, restore) {
-            (Err(err), _) => Err(err),
-            (Ok(_), Err(err)) => Err(err),
-            (Ok(report), Ok(())) => Ok(report),
+            .await
+            .map_err(Error::Bus)?;
         }
+
+        self.write_word(ALT_ACC_CONF, 0).await.map_err(Error::Bus)?;
+        self.write_word(ALT_GYR_CONF, 0).await.map_err(Error::Bus)?;
+        self.write_feature_word(EXT_ST_SELECT, selection.to_word())
+            .await?;
+        self.write_word(CMD, SELF_TEST).await.map_err(Error::Bus)?;
+
+        // FEATURE_IO1 bit layout: bits[3:0]=error_status, bit4=st_result_rdy,
+        // bit6=st_result (pass/fail), bit7=sample_rate_error
+        // (§6.1.2, Register (0x11) feature_io1)
+        for _ in 0..50 {
+            let feature_io1 = self.read_word(FEATURE_IO1).await.map_err(Error::Bus)?;
+            if feature_io1 & (1 << 4) != 0 {
+                let detail = SelfTestDetail(self.read_feature_word(EXT_ST_RESULT).await?);
+                return Ok(SelfTestResult {
+                    selection,
+                    passed: feature_io1 & (1 << 6) != 0,
+                    sample_rate_error: feature_io1 & (1 << 7) != 0,
+                    error_status: (feature_io1 & 0x000F) as u8,
+                    detail,
+                });
+            }
+            delay.delay_ms(10).await;
+        }
+
+        Err(Error::SelfTestTimeout)
     }
 
     /// Read and decode the `STATUS` register.
@@ -814,77 +832,6 @@ where
                 .map_err(Error::Bus)?;
         }
         Ok(())
-    }
-
-    async fn run_self_test_inner<D: DelayNs>(
-        &mut self,
-        delay: &mut D,
-        selection: SelfTestSelection,
-    ) -> Result<SelfTestResult, Error<<Self as Access>::BusError>> {
-        self.enable_feature_engine(delay).await?;
-
-        if selection.tests_gyroscope() {
-            self.write_word(
-                ACC_CONF,
-                AccelConfig {
-                    mode: crate::AccelMode::HighPerformance,
-                    odr: OutputDataRate::Hz200,
-                    ..Default::default()
-                }
-                .to_word(),
-            )
-            .await
-            .map_err(Error::Bus)?;
-        }
-
-        self.write_word(ALT_ACC_CONF, 0).await.map_err(Error::Bus)?;
-        self.write_word(ALT_GYR_CONF, 0).await.map_err(Error::Bus)?;
-        self.write_feature_word(EXT_ST_SELECT, selection.to_word())
-            .await?;
-        self.write_word(CMD, SELF_TEST).await.map_err(Error::Bus)?;
-
-        // FEATURE_IO1 bit layout: bits[3:0]=error_status, bit4=st_result_rdy,
-        // bit6=st_result (pass/fail), bit7=sample_rate_error
-        // (§6.1.2, Register (0x11) feature_io1)
-        for _ in 0..50 {
-            let feature_io1 = self.read_word(FEATURE_IO1).await.map_err(Error::Bus)?;
-            if feature_io1 & (1 << 4) != 0 {
-                let detail = SelfTestDetail(self.read_feature_word(EXT_ST_RESULT).await?);
-                return Ok(SelfTestResult {
-                    selection,
-                    passed: feature_io1 & (1 << 6) != 0,
-                    sample_rate_error: feature_io1 & (1 << 7) != 0,
-                    error_status: (feature_io1 & 0x000F) as u8,
-                    detail,
-                });
-            }
-            delay.delay_ms(10).await;
-        }
-
-        Err(Error::SelfTestTimeout)
-    }
-
-    async fn restore_self_test_configuration(
-        &mut self,
-        acc_conf: u16,
-        gyr_conf: u16,
-        alt_acc_conf: u16,
-        alt_gyr_conf: u16,
-        st_select: u16,
-    ) -> Result<(), Error<<Self as Access>::BusError>> {
-        self.write_word(ACC_CONF, acc_conf)
-            .await
-            .map_err(Error::Bus)?;
-        self.write_word(GYR_CONF, gyr_conf)
-            .await
-            .map_err(Error::Bus)?;
-        self.write_word(ALT_ACC_CONF, alt_acc_conf)
-            .await
-            .map_err(Error::Bus)?;
-        self.write_word(ALT_GYR_CONF, alt_gyr_conf)
-            .await
-            .map_err(Error::Bus)?;
-        self.write_feature_word(EXT_ST_SELECT, st_select).await
     }
 
     async fn write_feature_word(
