@@ -167,6 +167,10 @@ where
     ///
     /// Call this after [`init`](Self::init) before relying on accelerometer or
     /// combined IMU sample reads.
+    ///
+    /// If [`AltConfigControl::reset_on_user_config_write`] is set, writing to
+    /// `ACC_CONF` returns the accelerometer from its alternate configuration back
+    /// to the user configuration.
     pub async fn set_accel_config(
         &mut self,
         config: AccelConfig,
@@ -182,6 +186,10 @@ where
     ///
     /// Call this after [`init`](Self::init) before relying on gyroscope or
     /// combined IMU sample reads.
+    ///
+    /// If [`AltConfigControl::reset_on_user_config_write`] is set, writing to
+    /// `GYR_CONF` returns the gyroscope from its alternate configuration back
+    /// to the user configuration.
     pub async fn set_gyro_config(
         &mut self,
         config: GyroConfig,
