@@ -25,6 +25,31 @@ pub enum Error<E> {
     GpioError,
 }
 
+impl<E: core::fmt::Display> core::fmt::Display for Error<E> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Error::Bus(e) => write!(f, "bus error: {e}"),
+            Error::InvalidChipId(id) => write!(f, "invalid chip ID: {id:#x}"),
+            Error::FatalError => write!(f, "BMI323 fatal internal error"),
+            Error::FeatureEngineNotReady(status) => {
+                write!(f, "feature engine not ready: status={status:#x}")
+            }
+            Error::SelfTestTimeout => write!(f, "self-test timeout"),
+            Error::InvalidTemperature => write!(f, "invalid temperature sentinel"),
+            Error::GpioError => write!(f, "GPIO error while waiting for interrupt"),
+        }
+    }
+}
+
+impl<E: core::error::Error + 'static> core::error::Error for Error<E> {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        match self {
+            Error::Bus(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
 /// Primary 7-bit BMI323 I2C address (§7.2.4.2).
 ///
 /// Use this when the sensor address-selection pin is strapped for the default
