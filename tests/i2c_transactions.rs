@@ -224,6 +224,51 @@ fn set_sensor_configs_writes_expected_words_and_tracks_ranges() {
 }
 
 #[test]
+fn reinit_resets_bookkeeping_to_por_defaults() {
+    let accel = AccelConfig {
+        mode: AccelMode::HighPerformance,
+        average: AverageSamples::Avg4,
+        bandwidth: Bandwidth::OdrOver4,
+        range: AccelRange::G16,
+        odr: OutputDataRate::Hz200,
+    };
+    let gyro = GyroConfig {
+        mode: GyroMode::LowPower,
+        average: AverageSamples::Avg8,
+        bandwidth: Bandwidth::OdrOver2,
+        range: GyroRange::Dps500,
+        odr: OutputDataRate::Hz100,
+    };
+    let expectations = [
+        write_word(ACC_CONF, accel.to_word()),
+        write_word(GYR_CONF, gyro.to_word()),
+        // re-init: soft reset + chip-id + err + status reads
+        write_word(CMD, SOFT_RESET),
+        read_word(CHIP_ID, BMI323_CHIP_ID),
+        read_word(ERR_REG, 0x0000),
+        read_word(STATUS, 0x00E1),
+    ];
+    let i2c = I2cMock::new(&expectations);
+    let mut imu = Bmi323::new_i2c(i2c, ADDR);
+    let mut delay = CheckedDelay::new(&[delay_tx!(ms, 2)]);
+
+    run!(imu.set_accel_config(accel)).unwrap();
+    run!(imu.set_gyro_config(gyro)).unwrap();
+    assert_eq!(imu.accel_range(), AccelRange::G16);
+    assert_eq!(imu.gyro_range(), GyroRange::Dps500);
+
+    // Re-init issues a soft reset; chip returns to POR defaults so the
+    // bookkeeping cache must also revert to G2/Dps125.
+    run!(imu.init(&mut delay)).unwrap();
+    assert_eq!(imu.accel_range(), AccelRange::G2);
+    assert_eq!(imu.gyro_range(), GyroRange::Dps125);
+
+    delay.done();
+    let mut i2c = imu.destroy();
+    i2c.done();
+}
+
+#[test]
 fn enable_feature_engine_uses_expected_register_sequence() {
     let expectations = [
         write_word(ACC_CONF, 0x0000),
