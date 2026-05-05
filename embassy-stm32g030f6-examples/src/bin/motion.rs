@@ -3,8 +3,8 @@
 
 use bmi323_driver::{
     AccelConfig, AccelMode, ActiveLevel, AnyMotionConfig, Bmi323, EventReportMode,
-    InterruptChannel, InterruptPinConfig, InterruptRoute, InterruptSource, MotionAxes,
-    OutputDataRate, OutputMode, ReferenceUpdate, I2C_ADDRESS_PRIMARY,
+    I2C_ADDRESS_PRIMARY, InterruptChannel, InterruptPinConfig, InterruptRoute, InterruptSource,
+    MotionAxes, OutputDataRate, OutputMode, ReferenceUpdate,
 };
 use defmt::{error, info};
 use defmt_rtt as _;

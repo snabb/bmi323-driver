@@ -1,5 +1,5 @@
 use crate::driver::temperature_raw_to_celsius;
-use crate::registers::{interrupt_map_location, INT_MAP1, INT_MAP2};
+use crate::registers::{INT_MAP1, INT_MAP2, interrupt_map_location};
 use crate::*;
 
 #[test]

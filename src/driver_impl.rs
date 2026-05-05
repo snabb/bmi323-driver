@@ -4,26 +4,25 @@ use embedded_hal::delay::DelayNs;
 use embedded_hal_async::delay::DelayNs;
 
 use crate::registers::{
-    interrupt_map_location, words_to_axis, TransportKind, ACC_CONF, ACC_DATA_X, ALT_ACC_CONF,
-    ALT_CONF, ALT_GYR_CONF, ALT_STATUS, BMI323_CHIP_ID, CHIP_ID, CMD, ERR_REG, EXT_ALT_CONFIG_CHG,
-    EXT_ANYMO_1, EXT_ANYMO_2, EXT_ANYMO_3, EXT_FLAT_1, EXT_FLAT_2, EXT_GEN_SET_1, EXT_NOMO_1,
-    EXT_NOMO_2, EXT_NOMO_3, EXT_ORIENT_1, EXT_ORIENT_2, EXT_SC_1, EXT_SIGMO_1, EXT_SIGMO_2,
-    EXT_SIGMO_3, EXT_ST_RESULT, EXT_ST_SELECT, EXT_TAP_1, EXT_TAP_2, EXT_TAP_3, EXT_TILT_1,
-    EXT_TILT_2, FEATURE_CTRL, FEATURE_CTRL_ENABLE, FEATURE_DATA_ADDR, FEATURE_DATA_TX,
-    FEATURE_ENGINE_CONFIG, FEATURE_ENGINE_STATUS_ACTIVATED, FEATURE_ENGINE_STATUS_NO_ERROR,
-    FEATURE_IO0, FEATURE_IO1, FEATURE_IO2, FEATURE_IO3, FEATURE_IO_STATUS, FEATURE_IO_STATUS_SYNC,
-    FIFO_CONF, FIFO_CTRL, FIFO_CTRL_FLUSH, FIFO_DATA, FIFO_FILL_LEVEL, FIFO_WATERMARK, GYR_CONF,
-    GYR_DATA_X, INT_CONF, INT_STATUS_IBI, INT_STATUS_INT1, INT_STATUS_INT2, IO_INT_CTRL, SELF_TEST,
-    SENSOR_TIME_0, SOFT_RESET, STATUS, TEMP_DATA,
+    ACC_CONF, ACC_DATA_X, ALT_ACC_CONF, ALT_CONF, ALT_GYR_CONF, ALT_STATUS, BMI323_CHIP_ID,
+    CHIP_ID, CMD, ERR_REG, EXT_ALT_CONFIG_CHG, EXT_ANYMO_1, EXT_ANYMO_2, EXT_ANYMO_3, EXT_FLAT_1,
+    EXT_FLAT_2, EXT_GEN_SET_1, EXT_NOMO_1, EXT_NOMO_2, EXT_NOMO_3, EXT_ORIENT_1, EXT_ORIENT_2,
+    EXT_SC_1, EXT_SIGMO_1, EXT_SIGMO_2, EXT_SIGMO_3, EXT_ST_RESULT, EXT_ST_SELECT, EXT_TAP_1,
+    EXT_TAP_2, EXT_TAP_3, EXT_TILT_1, EXT_TILT_2, FEATURE_CTRL, FEATURE_CTRL_ENABLE,
+    FEATURE_DATA_ADDR, FEATURE_DATA_TX, FEATURE_ENGINE_CONFIG, FEATURE_ENGINE_STATUS_ACTIVATED,
+    FEATURE_ENGINE_STATUS_NO_ERROR, FEATURE_IO_STATUS, FEATURE_IO_STATUS_SYNC, FEATURE_IO0,
+    FEATURE_IO1, FEATURE_IO2, FEATURE_IO3, FIFO_CONF, FIFO_CTRL, FIFO_CTRL_FLUSH, FIFO_DATA,
+    FIFO_FILL_LEVEL, FIFO_WATERMARK, GYR_CONF, GYR_DATA_X, INT_CONF, INT_STATUS_IBI,
+    INT_STATUS_INT1, INT_STATUS_INT2, IO_INT_CTRL, SELF_TEST, SENSOR_TIME_0, SOFT_RESET, STATUS,
+    TEMP_DATA, TransportKind, interrupt_map_location, words_to_axis,
 };
 use crate::{
     AccelConfig, Access, ActiveLevel, AltAccelConfig, AltConfigControl, AltGyroConfig, AltStatus,
     AnyMotionConfig, AxisData, Bmi323, DeviceState, Error, ErrorWord, EventReportMode, FifoConfig,
-    FlatConfig, GyroConfig, ImuData, InterruptChannel, InterruptPinConfig, InterruptRoute,
-    InterruptSource, InterruptStatus, NoMotionConfig, OrientationConfig, OutputDataRate,
-    OutputMode, ReferenceUpdate, SelfTestDetail, SelfTestResult, SelfTestSelection,
+    FlatConfig, GyroConfig, INTERRUPT_HOLD_MAX, ImuData, InterruptChannel, InterruptPinConfig,
+    InterruptRoute, InterruptSource, InterruptStatus, NoMotionConfig, OrientationConfig,
+    OutputDataRate, OutputMode, ReferenceUpdate, SelfTestDetail, SelfTestResult, SelfTestSelection,
     SignificantMotionConfig, StatusWord, StepCounterConfig, TapConfig, TiltConfig,
-    INTERRUPT_HOLD_MAX,
 };
 
 #[maybe_async::maybe_async]

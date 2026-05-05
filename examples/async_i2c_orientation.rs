@@ -1,7 +1,7 @@
 use bmi323_driver::{
-    AccelConfig, ActiveLevel, Bmi323, FeatureBlockingMode, InterruptChannel, InterruptPinConfig,
-    InterruptRoute, InterruptSource, OrientationConfig, OrientationMode, OutputDataRate,
-    OutputMode, I2C_ADDRESS_PRIMARY,
+    AccelConfig, ActiveLevel, Bmi323, FeatureBlockingMode, I2C_ADDRESS_PRIMARY, InterruptChannel,
+    InterruptPinConfig, InterruptRoute, InterruptSource, OrientationConfig, OrientationMode,
+    OutputDataRate, OutputMode,
 };
 use embedded_hal_async::delay::DelayNs;
 use embedded_hal_async::digital::Wait;
