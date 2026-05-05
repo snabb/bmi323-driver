@@ -191,6 +191,14 @@
 //! ```
 #![no_std]
 
+#[cfg(all(feature = "blocking", feature = "async"))]
+compile_error!("features \"blocking\" and \"async\" are mutually exclusive; \
+    enable exactly one. If you added --features async, also pass --no-default-features \
+    to suppress the default \"blocking\" feature.");
+
+#[cfg(not(any(feature = "blocking", feature = "async")))]
+compile_error!("one of features \"blocking\" or \"async\" must be enabled");
+
 #[cfg(test)]
 extern crate std;
 
