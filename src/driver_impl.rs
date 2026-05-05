@@ -77,6 +77,10 @@ where
         self.write_word(CMD, SOFT_RESET).await.map_err(Error::Bus)?;
         // Datasheet Table 3: t_start = 2 ms typical after reset.
         delay.delay_ms(2).await;
+        // Chip returns to POR defaults (ACC_CONF = GYR_CONF = 0x0000) on reset,
+        // so the bookkeeping cache must be reset to match.
+        self.accel_range = crate::AccelRange::G2;
+        self.gyro_range = crate::GyroRange::Dps125;
         Ok(())
     }
 
