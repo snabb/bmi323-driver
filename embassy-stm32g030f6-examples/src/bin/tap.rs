@@ -2,9 +2,9 @@
 #![no_main]
 
 use bmi323_driver::{
-    AccelConfig, ActiveLevel, Bmi323, I2C_ADDRESS_PRIMARY, InterruptChannel,
-    InterruptPinConfig, InterruptRoute, InterruptSource, OutputDataRate, OutputMode, TapAxis,
-    TapConfig, TapDetectionMode, TapReportingMode,
+    AccelConfig, ActiveLevel, Bmi323, I2C_ADDRESS_PRIMARY, InterruptChannel, InterruptPinConfig,
+    InterruptRoute, InterruptSource, OutputDataRate, OutputMode, TapAxis, TapConfig,
+    TapDetectionMode, TapReportingMode,
 };
 use defmt::{error, info};
 use defmt_rtt as _;
