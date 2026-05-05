@@ -186,6 +186,11 @@ where
 
 ## Feature flags
 
+Exactly one of `blocking` or `async` must be enabled. Enabling both simultaneously
+will cause a compile error.
+
+- `blocking` *(default)*: blocking (synchronous) driver using `embedded-hal` traits
+- `async`: async driver using `embedded-hal-async` traits
 - `defmt`: derives `defmt::Format` for public value types
 
 ## Repository examples
