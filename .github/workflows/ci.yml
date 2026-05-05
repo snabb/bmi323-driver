@@ -24,10 +24,10 @@ jobs:
         run: cargo fmt --check
 
       - name: Clippy (async)
-        run: cargo clippy --features async,defmt -- -D warnings
+        run: cargo clippy --all-targets --features async,defmt -- -D warnings
 
       - name: Clippy (blocking)
-        run: cargo clippy --features blocking,defmt -- -D warnings
+        run: cargo clippy --all-targets --features blocking,defmt -- -D warnings
 
       - name: Tests (async)
         run: cargo test --features async
