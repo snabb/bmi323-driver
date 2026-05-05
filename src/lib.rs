@@ -1,4 +1,4 @@
-//! Generic `no_std` driver for the Bosch BMI323 IMU.
+//! Generic `no_std` driver for the Bosch Sensortec BMI323 IMU.
 //!
 //! This crate provides:
 //!
@@ -201,7 +201,7 @@ mod transport;
 mod types;
 
 pub use driver::Bmi323;
-pub use transport::{Access, I2cTransport, MAX_WORDS_PER_READ, SpiTransport};
+pub use transport::{Access, I2cTransport, SpiTransport, MAX_WORDS_PER_READ};
 pub use types::*;
 
 #[cfg(test)]

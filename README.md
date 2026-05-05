@@ -7,7 +7,7 @@
 [![license](https://img.shields.io/crates/l/bmi323-driver.svg)](https://github.com/snabb/bmi323-driver/blob/main/LICENSE)
 [![rust-version](https://img.shields.io/badge/rust-1.85%2B-93450a.svg)](https://www.rust-lang.org/)
 
-`bmi323-driver` is a `no_std` Rust driver for the Bosch BMI323 6-DoF IMU.
+`bmi323-driver` is a `no_std` Rust driver for the Bosch Sensortec BMI323 6-DoF IMU.
 
 The datasheet is available at Bosch Sensortec web site: https://www.bosch-sensortec.com/en/products/motion-sensors/imus/bmi323
 
