@@ -47,22 +47,22 @@ embedded-hal-mock = { version = "0.11.1", default-features = false, features = [
 
 [[test]]
 name = "i2c_transactions_blocking"
-path = "tests/i2c_transactions.rs"
+path = "tests/i2c_transactions_blocking.rs"
 required-features = ["blocking"]
 
 [[test]]
 name = "i2c_transactions_async"
-path = "tests/i2c_transactions.rs"
+path = "tests/i2c_transactions_async.rs"
 required-features = ["async"]
 
 [[test]]
 name = "spi_transactions_blocking"
-path = "tests/spi_transactions.rs"
+path = "tests/spi_transactions_blocking.rs"
 required-features = ["blocking"]
 
 [[test]]
 name = "spi_transactions_async"
-path = "tests/spi_transactions.rs"
+path = "tests/spi_transactions_async.rs"
 required-features = ["async"]
 
 [[example]]
