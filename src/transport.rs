@@ -154,7 +154,8 @@ impl<SPI: HalSpiDevice<u8>> Access for Bmi323<SpiTransport<SPI>> {
         let cmd = 0x80 | (reg & 0x7F);
         // 1 dummy byte precedes the 2 payload bytes on SPI reads (§7.2.3)
         let mut bytes = [0u8; 3];
-        let mut ops = [Operation::Write(&[cmd]), Operation::Read(&mut bytes)];
+        let cmd_buf = [cmd];
+        let mut ops = [Operation::Write(&cmd_buf), Operation::Read(&mut bytes)];
         self.transport.bus.transaction(&mut ops)?;
         Ok(u16::from_le_bytes([bytes[1], bytes[2]]))
     }
@@ -171,8 +172,9 @@ impl<SPI: HalSpiDevice<u8>> Access for Bmi323<SpiTransport<SPI>> {
         // 1 dummy byte + 2 bytes per word
         let mut bytes = [0u8; 1 + MAX_WORDS_PER_READ * 2];
         let byte_len = words.len() * 2 + 1;
+        let cmd_buf = [cmd];
         let mut ops = [
-            Operation::Write(&[cmd]),
+            Operation::Write(&cmd_buf),
             Operation::Read(&mut bytes[..byte_len]),
         ];
         self.transport.bus.transaction(&mut ops)?;
@@ -195,7 +197,8 @@ impl<SPI: HalSpiDevice<u8>> Access for Bmi323<SpiTransport<SPI>> {
         let cmd = 0x80 | (reg & 0x7F);
         // 1 dummy byte precedes the 2 payload bytes on SPI reads (§7.2.3)
         let mut bytes = [0u8; 3];
-        let mut ops = [Operation::Write(&[cmd]), Operation::Read(&mut bytes)];
+        let cmd_buf = [cmd];
+        let mut ops = [Operation::Write(&cmd_buf), Operation::Read(&mut bytes)];
         self.transport.bus.transaction(&mut ops).await?;
         Ok(u16::from_le_bytes([bytes[1], bytes[2]]))
     }
@@ -212,8 +215,9 @@ impl<SPI: HalSpiDevice<u8>> Access for Bmi323<SpiTransport<SPI>> {
         // 1 dummy byte + 2 bytes per word
         let mut bytes = [0u8; 1 + MAX_WORDS_PER_READ * 2];
         let byte_len = words.len() * 2 + 1;
+        let cmd_buf = [cmd];
         let mut ops = [
-            Operation::Write(&[cmd]),
+            Operation::Write(&cmd_buf),
             Operation::Read(&mut bytes[..byte_len]),
         ];
         self.transport.bus.transaction(&mut ops).await?;

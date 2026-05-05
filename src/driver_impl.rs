@@ -10,20 +10,19 @@ use crate::registers::{
     EXT_SC_1, EXT_SIGMO_1, EXT_SIGMO_2, EXT_SIGMO_3, EXT_ST_RESULT, EXT_ST_SELECT, EXT_TAP_1,
     EXT_TAP_2, EXT_TAP_3, EXT_TILT_1, EXT_TILT_2, FEATURE_CTRL, FEATURE_CTRL_ENABLE,
     FEATURE_DATA_ADDR, FEATURE_DATA_TX, FEATURE_ENGINE_CONFIG, FEATURE_ENGINE_STATUS_ACTIVATED,
-    FEATURE_ENGINE_STATUS_NO_ERROR, FIFO_CTRL_FLUSH, FEATURE_IO_STATUS,
-    FEATURE_IO_STATUS_SYNC, FEATURE_IO0, FEATURE_IO1, FEATURE_IO2, FEATURE_IO3, FIFO_CONF,
-    FIFO_CTRL, FIFO_DATA, FIFO_FILL_LEVEL, FIFO_WATERMARK, GYR_CONF, GYR_DATA_X, INT_CONF,
-    INT_STATUS_IBI, INT_STATUS_INT1, INT_STATUS_INT2, IO_INT_CTRL, SELF_TEST, SENSOR_TIME_0,
-    SOFT_RESET, STATUS, TEMP_DATA, TransportKind, interrupt_map_location, words_to_axis,
+    FEATURE_ENGINE_STATUS_NO_ERROR, FEATURE_IO_STATUS, FEATURE_IO_STATUS_SYNC, FEATURE_IO0,
+    FEATURE_IO1, FEATURE_IO2, FEATURE_IO3, FIFO_CONF, FIFO_CTRL, FIFO_CTRL_FLUSH, FIFO_DATA,
+    FIFO_FILL_LEVEL, FIFO_WATERMARK, GYR_CONF, GYR_DATA_X, INT_CONF, INT_STATUS_IBI,
+    INT_STATUS_INT1, INT_STATUS_INT2, IO_INT_CTRL, SELF_TEST, SENSOR_TIME_0, SOFT_RESET, STATUS,
+    TEMP_DATA, TransportKind, interrupt_map_location, words_to_axis,
 };
 use crate::{
-    AccelConfig, ActiveLevel, AltAccelConfig, AltConfigControl, AltGyroConfig, AltStatus,
-    AnyMotionConfig, Access, AxisData, Bmi323, DeviceState, Error, ErrorWord, EventReportMode,
-    FifoConfig, FlatConfig, GyroConfig, ImuData, InterruptChannel, InterruptPinConfig,
-    InterruptRoute, InterruptSource, InterruptStatus, INTERRUPT_HOLD_MAX, NoMotionConfig,
-    OrientationConfig, OutputDataRate, OutputMode, ReferenceUpdate, SelfTestDetail, SelfTestResult,
-    SelfTestSelection, SignificantMotionConfig, StatusWord, StepCounterConfig, TapConfig,
-    TiltConfig,
+    AccelConfig, Access, ActiveLevel, AltAccelConfig, AltConfigControl, AltGyroConfig, AltStatus,
+    AnyMotionConfig, AxisData, Bmi323, DeviceState, Error, ErrorWord, EventReportMode, FifoConfig,
+    FlatConfig, GyroConfig, INTERRUPT_HOLD_MAX, ImuData, InterruptChannel, InterruptPinConfig,
+    InterruptRoute, InterruptSource, InterruptStatus, NoMotionConfig, OrientationConfig,
+    OutputDataRate, OutputMode, ReferenceUpdate, SelfTestDetail, SelfTestResult, SelfTestSelection,
+    SignificantMotionConfig, StatusWord, StepCounterConfig, TapConfig, TiltConfig,
 };
 
 #[maybe_async::maybe_async]
@@ -148,9 +147,7 @@ where
     }
 
     /// Read and decode the `STATUS` register.
-    pub async fn status_word(
-        &mut self,
-    ) -> Result<StatusWord, Error<<Self as Access>::BusError>> {
+    pub async fn status_word(&mut self) -> Result<StatusWord, Error<<Self as Access>::BusError>> {
         self.read_word(STATUS)
             .await
             .map(StatusWord)
@@ -158,9 +155,7 @@ where
     }
 
     /// Read and decode the `ERR_REG` register.
-    pub async fn error_word(
-        &mut self,
-    ) -> Result<ErrorWord, Error<<Self as Access>::BusError>> {
+    pub async fn error_word(&mut self) -> Result<ErrorWord, Error<<Self as Access>::BusError>> {
         self.read_word(ERR_REG)
             .await
             .map(ErrorWord)
@@ -225,9 +220,7 @@ where
     ///
     /// For predictable results, configure the accelerometer first with
     /// [`set_accel_config`](Self::set_accel_config).
-    pub async fn read_accel(
-        &mut self,
-    ) -> Result<AxisData, Error<<Self as Access>::BusError>> {
+    pub async fn read_accel(&mut self) -> Result<AxisData, Error<<Self as Access>::BusError>> {
         let mut words = [0u16; 3];
         self.read_words(ACC_DATA_X, &mut words)
             .await
@@ -239,9 +232,7 @@ where
     ///
     /// For predictable results, configure the gyroscope first with
     /// [`set_gyro_config`](Self::set_gyro_config).
-    pub async fn read_gyro(
-        &mut self,
-    ) -> Result<AxisData, Error<<Self as Access>::BusError>> {
+    pub async fn read_gyro(&mut self) -> Result<AxisData, Error<<Self as Access>::BusError>> {
         let mut words = [0u16; 3];
         self.read_words(GYR_DATA_X, &mut words)
             .await
@@ -254,9 +245,7 @@ where
     /// For predictable results, configure both sensors first with
     /// [`set_accel_config`](Self::set_accel_config) and
     /// [`set_gyro_config`](Self::set_gyro_config).
-    pub async fn read_imu_data(
-        &mut self,
-    ) -> Result<ImuData, Error<<Self as Access>::BusError>> {
+    pub async fn read_imu_data(&mut self) -> Result<ImuData, Error<<Self as Access>::BusError>> {
         let mut words = [0u16; 6];
         self.read_words(ACC_DATA_X, &mut words)
             .await
@@ -276,9 +265,7 @@ where
     }
 
     /// Read the 24-bit sensor time counter.
-    pub async fn read_sensor_time(
-        &mut self,
-    ) -> Result<u32, Error<<Self as Access>::BusError>> {
+    pub async fn read_sensor_time(&mut self) -> Result<u32, Error<<Self as Access>::BusError>> {
         let mut words = [0u16; 2];
         self.read_words(SENSOR_TIME_0, &mut words)
             .await
@@ -367,16 +354,16 @@ where
     }
 
     /// Read the current FIFO fill level in 16-bit words.
-    pub async fn fifo_fill_level(
-        &mut self,
-    ) -> Result<u16, Error<<Self as Access>::BusError>> {
+    pub async fn fifo_fill_level(&mut self) -> Result<u16, Error<<Self as Access>::BusError>> {
         // fill_level is an 11-bit field (§6.1.2, Register (0x15) fifo_fill_level)
         Ok(self.read_word(FIFO_FILL_LEVEL).await.map_err(Error::Bus)? & 0x07FF)
     }
 
     /// Flush all currently buffered FIFO contents.
     pub async fn flush_fifo(&mut self) -> Result<(), Error<<Self as Access>::BusError>> {
-        self.write_word(FIFO_CTRL, FIFO_CTRL_FLUSH).await.map_err(Error::Bus)
+        self.write_word(FIFO_CTRL, FIFO_CTRL_FLUSH)
+            .await
+            .map_err(Error::Bus)
     }
 
     /// Read raw FIFO words into the provided output slice.
@@ -430,7 +417,8 @@ where
             delay.delay_us(200).await;
             let io1 = self.read_word(FEATURE_IO1).await.map_err(Error::Bus)?;
             let status = (io1 & 0x000F) as u8;
-            if status == FEATURE_ENGINE_STATUS_ACTIVATED || status == FEATURE_ENGINE_STATUS_NO_ERROR {
+            if status == FEATURE_ENGINE_STATUS_ACTIVATED || status == FEATURE_ENGINE_STATUS_NO_ERROR
+            {
                 return Ok(());
             }
         }
@@ -758,9 +746,7 @@ where
     }
 
     /// Request a reset of the accumulated step count.
-    pub async fn reset_step_counter(
-        &mut self,
-    ) -> Result<(), Error<<Self as Access>::BusError>> {
+    pub async fn reset_step_counter(&mut self) -> Result<(), Error<<Self as Access>::BusError>> {
         self.configure_step_counter(StepCounterConfig {
             reset_counter: true,
             ..StepCounterConfig::disabled()
@@ -769,9 +755,7 @@ where
     }
 
     /// Read the 32-bit accumulated step count from the feature engine.
-    pub async fn read_step_count(
-        &mut self,
-    ) -> Result<u32, Error<<Self as Access>::BusError>> {
+    pub async fn read_step_count(&mut self) -> Result<u32, Error<<Self as Access>::BusError>> {
         let low = self.read_word(FEATURE_IO2).await.map_err(Error::Bus)? as u32;
         let high = self.read_word(FEATURE_IO3).await.map_err(Error::Bus)? as u32;
         Ok(low | (high << 16))
@@ -813,15 +797,14 @@ where
         .map_err(Error::Bus)?;
         self.write_feature_word(
             EXT_ALT_CONFIG_CHG,
-            (config.switch_to_alternate as u16 & 0x0F) | ((config.switch_to_user as u16 & 0x0F) << 4),
+            (config.switch_to_alternate as u16 & 0x0F)
+                | ((config.switch_to_user as u16 & 0x0F) << 4),
         )
         .await
     }
 
     /// Read which configuration set is currently active for accel and gyro.
-    pub async fn alt_status(
-        &mut self,
-    ) -> Result<AltStatus, Error<<Self as Access>::BusError>> {
+    pub async fn alt_status(&mut self) -> Result<AltStatus, Error<<Self as Access>::BusError>> {
         self.read_word(ALT_STATUS)
             .await
             .map(AltStatus)
