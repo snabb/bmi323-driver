@@ -20,14 +20,14 @@
 //! It does not own the external interrupt GPIO. This keeps the driver generic and
 //! makes it easy to use with Embassy or with a platform-specific interrupt layer.
 //!
-//! # Blocking vs async
+//! # Async vs blocking
 //!
 //! Select exactly one Cargo feature:
 //!
-//! - `blocking` (default) — all [`Bmi323`] methods are regular synchronous `fn`.
-//!   Uses `embedded-hal` 1.0 I2C/SPI/delay traits.
-//! - `async` — all [`Bmi323`] methods are `async fn`.
+//! - `async` (default) — all [`Bmi323`] methods are `async fn`.
 //!   Uses `embedded-hal-async` 1.0 traits. Required for Embassy.
+//! - `blocking` — all [`Bmi323`] methods are regular synchronous `fn`.
+//!   Uses `embedded-hal` 1.0 I2C/SPI/delay traits.
 //!
 //! Enabling both features simultaneously is a compile error.
 //!
@@ -81,8 +81,7 @@
 //!
 //! The driver tracks local range fields initialized to `AccelRange::G2` and
 //! `GyroRange::Dps125` to match the BMI323 power-on reset defaults
-//! (`ACC_CONF`/`GYR_CONF` = `0x0000`). These bookkeeping values only produce
-//! correct physical conversions after you explicitly configure the sensor.
+//! (`ACC_CONF`/`GYR_CONF` = `0x0000`).
 //!
 //! # Example: blocking I2C
 //!
@@ -207,7 +206,7 @@ mod transport;
 mod types;
 
 pub use driver::Bmi323;
-pub use transport::{Access, I2cTransport, MAX_WORDS_PER_READ, SpiTransport};
+pub use transport::{Access, I2cTransport, SpiTransport, MAX_WORDS_PER_READ};
 pub use types::*;
 
 #[cfg(test)]

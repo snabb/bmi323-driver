@@ -36,52 +36,17 @@ or gyro settings immediately after initialization.
 - alternate accel/gyro configuration switching
 - built-in accelerometer and gyroscope self-test
 
-## Non-goals
+## Feature flags
 
-This crate does not own the host MCU interrupt GPIO. The BMI323 can route
-interrupts to `INT1` and `INT2`, but waiting on the external pin is left to the
-application or framework:
+Async mode is the default when no feature flags are set. The `blocking` feature
+opts into the synchronous `embedded-hal` API. Enabling both simultaneously
+causes a compile error.
 
-- blocking users can poll or handle the MCU interrupt themselves, then read the
-  BMI323 interrupt status register
-- async users can wait on a GPIO implementing
-  `embedded_hal_async::digital::Wait`, then read or consume the BMI323 interrupt
-  status
+- `async`: no-op marker; async is the default behavior without `blocking`
+- `blocking`: synchronous driver using `embedded-hal` traits
+- `defmt`: derives `defmt::Format` for public value types
 
-This keeps the crate portable across HALs and RTOS/executor choices.
-
-## Missing features and current limitations
-
-This crate is usable today, but it does not yet cover the full BMI323 feature
-set. In particular:
-
-- only I2C and SPI transports are implemented; there is no I3C transport API
-- FIFO support is currently low-level:
-  - configuration, fill level reads, flush, and raw word reads are supported
-  - higher-level FIFO frame parsing and convenience helpers are not yet provided
-- there are no public helpers yet for calibration, offset compensation, or
-  similar factory/service operations
-- the crate has mocked transaction tests for blocking and async I2C/SPI
-  transports, but it does not yet have broad transaction coverage for every
-  feature combination
-
-## Quick start
-
-Explicit sensor configuration after `init` is expected. The `AccelConfig` and
-`GyroConfig` defaults are:
-
-- `AccelConfig::default()`: `Normal`, `Avg1`, `OdrOver2`, `G8`, `Hz50`
-- `GyroConfig::default()`: `Normal`, `Avg1`, `OdrOver2`, `Dps2000`, `Hz50`
-
-These are convenience config values only. They are not applied to the chip
-unless you call `set_accel_config` and `set_gyro_config`.
-
-For `AnyMotionConfig` and `NoMotionConfig`, the threshold, hysteresis,
-duration, wait-time, and interrupt-hold fields are now documented with their
-BMI323 scaling, and helper conversion functions are provided so you do not need
-to work in raw field encodings directly.
-
-### Blocking I2C
+### Blocking I2C example
 
 ```rust,no_run
 use bmi323_driver::{
@@ -117,7 +82,7 @@ where
 }
 ```
 
-### Async interrupt-driven usage
+### Async interrupt-driven advanced example
 
 ```rust,no_run
 use bmi323_driver::{
@@ -183,16 +148,6 @@ where
     Ok(())
 }
 ```
-
-## Feature flags
-
-Async mode is the default when no feature flags are set. The `blocking` feature
-opts into the synchronous `embedded-hal` API. Enabling both simultaneously
-causes a compile error.
-
-- `async`: no-op marker; async is the default behavior without `blocking`
-- `blocking`: synchronous driver using `embedded-hal` traits
-- `defmt`: derives `defmt::Format` for public value types
 
 ## Repository examples
 
