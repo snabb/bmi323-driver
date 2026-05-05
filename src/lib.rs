@@ -86,11 +86,11 @@
 //!
 //! # Example: blocking I2C
 //!
-//! Requires `features = ["blocking"]` (the default).
+//! Requires `default-features = false, features = ["blocking"]`.
 //!
 //! ```no_run
-//! # #[cfg(feature = "async")] fn main() {}
-//! # #[cfg(not(feature = "async"))]
+//! # #[cfg(not(feature = "blocking"))] fn main() {}
+//! # #[cfg(feature = "blocking")]
 //! # fn main() {
 //! use bmi323_driver::{AccelConfig, Bmi323, GyroConfig, I2C_ADDRESS_PRIMARY, OutputDataRate};
 //! use embedded_hal::delay::DelayNs;
@@ -126,11 +126,11 @@
 //!
 //! # Example: async interrupt-driven usage
 //!
-//! Requires `features = ["async"]`.
+//! Works with default features (async is the default).
 //!
 //! ```no_run
-//! # #[cfg(not(feature = "async"))] fn main() {}
-//! # #[cfg(feature = "async")]
+//! # #[cfg(feature = "blocking")] fn main() {}
+//! # #[cfg(not(feature = "blocking"))]
 //! # fn main() {
 //! use bmi323_driver::{
 //!     AccelConfig, AccelMode, ActiveLevel, AnyMotionConfig, Bmi323, EventReportMode,
@@ -193,11 +193,7 @@
 
 #[cfg(all(feature = "blocking", feature = "async"))]
 compile_error!("features \"blocking\" and \"async\" are mutually exclusive; \
-    enable exactly one. If you added --features blocking, also pass \
-    --no-default-features to suppress the default \"async\" feature.");
-
-#[cfg(not(any(feature = "blocking", feature = "async")))]
-compile_error!("one of features \"blocking\" or \"async\" must be enabled");
+    choose one or neither (async is the default when neither is specified)");
 
 #[cfg(test)]
 extern crate std;

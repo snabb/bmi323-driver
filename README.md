@@ -186,11 +186,12 @@ where
 
 ## Feature flags
 
-Exactly one of `async` or `blocking` must be enabled. Enabling both simultaneously
-will cause a compile error.
+Async mode is the default when no feature flags are set. The `blocking` feature
+opts into the synchronous `embedded-hal` API. Enabling both simultaneously
+causes a compile error.
 
-- `async` *(default)*: async driver using `embedded-hal-async` traits
-- `blocking`: blocking (synchronous) driver using `embedded-hal` traits; requires `default-features = false`
+- `async`: no-op marker; async is the default behavior without `blocking`
+- `blocking`: synchronous driver using `embedded-hal` traits
 - `defmt`: derives `defmt::Format` for public value types
 
 ## Repository examples

@@ -1,12 +1,12 @@
 use embedded_hal::spi::Operation;
 
-#[cfg(not(feature = "async"))]
+#[cfg(feature = "blocking")]
 use embedded_hal::i2c::I2c as HalI2c;
-#[cfg(not(feature = "async"))]
+#[cfg(feature = "blocking")]
 use embedded_hal::spi::SpiDevice as HalSpiDevice;
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 use embedded_hal_async::i2c::I2c as HalI2c;
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 use embedded_hal_async::spi::SpiDevice as HalSpiDevice;
 
 use crate::Bmi323;
@@ -41,7 +41,7 @@ pub struct SpiTransport<SPI> {
 ///
 /// In async mode (`features = ["async"]`) the methods are `async fn`.
 /// In blocking mode (`features = ["blocking"]`, the default) they are regular `fn`.
-#[cfg(not(feature = "async"))]
+#[cfg(feature = "blocking")]
 pub trait Access {
     /// Underlying bus error type returned by the transport.
     type BusError;
@@ -53,7 +53,7 @@ pub trait Access {
     fn read_words(&mut self, reg: u8, words: &mut [u16]) -> Result<(), Self::BusError>;
 }
 
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 #[allow(async_fn_in_trait)]
 pub trait Access {
     /// Underlying bus error type returned by the transport.
@@ -68,7 +68,7 @@ pub trait Access {
 
 // ---- Blocking I2C impl ----
 
-#[cfg(not(feature = "async"))]
+#[cfg(feature = "blocking")]
 impl<I2C: HalI2c> Access for Bmi323<I2cTransport<I2C>> {
     type BusError = I2C::Error;
 
@@ -105,7 +105,7 @@ impl<I2C: HalI2c> Access for Bmi323<I2cTransport<I2C>> {
 
 // ---- Async I2C impl ----
 
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 impl<I2C: HalI2c> Access for Bmi323<I2cTransport<I2C>> {
     type BusError = I2C::Error;
 
@@ -145,7 +145,7 @@ impl<I2C: HalI2c> Access for Bmi323<I2cTransport<I2C>> {
 
 // ---- Blocking SPI impl ----
 
-#[cfg(not(feature = "async"))]
+#[cfg(feature = "blocking")]
 impl<SPI: HalSpiDevice<u8>> Access for Bmi323<SpiTransport<SPI>> {
     type BusError = SPI::Error;
 
@@ -186,7 +186,7 @@ impl<SPI: HalSpiDevice<u8>> Access for Bmi323<SpiTransport<SPI>> {
 
 // ---- Async SPI impl ----
 
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 impl<SPI: HalSpiDevice<u8>> Access for Bmi323<SpiTransport<SPI>> {
     type BusError = SPI::Error;
 

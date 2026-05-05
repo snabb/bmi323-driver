@@ -1,6 +1,6 @@
-#[cfg(not(feature = "async"))]
+#[cfg(feature = "blocking")]
 use embedded_hal::delay::DelayNs;
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 use embedded_hal_async::delay::DelayNs;
 
 use crate::registers::{
@@ -906,7 +906,7 @@ where
 }
 
 /// Async-only methods available when the `async` feature is enabled.
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 impl<T> Bmi323<T>
 where
     Self: Access,
