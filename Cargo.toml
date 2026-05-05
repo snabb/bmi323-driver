@@ -21,24 +21,25 @@ include = [
 ]
 
 [package.metadata.docs.rs]
-features = ["async", "defmt"]
-no-default-features = false
+features = ["defmt"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-# Exactly one of "blocking" or "async" must be selected.
-# Enabling both simultaneously will cause a compile error.
-default = ["async"]
-# Async driver using embedded-hal-async traits (default).
-async = ["dep:embedded-hal-async"]
-# Blocking (synchronous) driver using embedded-hal traits.
+# Async (embedded-hal-async) is the default when no feature is specified.
+# "async" may be listed explicitly for clarity; it acts as a no-op but is used
+# as a required-feature guard for async examples and tests so that they are not
+# compiled in blocking mode.
+# "blocking" opts into the synchronous embedded-hal API.
+# Enabling both simultaneously causes a compile error.
+default = []
+async = []
 blocking = ["maybe-async/is_sync"]
 defmt = ["dep:defmt"]
 
 [dependencies]
 defmt = { version = "1.0.1", optional = true }
 embedded-hal = "1.0.0"
-embedded-hal-async = { version = "1.0.0", optional = true }
+embedded-hal-async = "1.0.0"
 maybe-async = "0.2.10"
 
 [target.'cfg(not(target_os = "none"))'.dev-dependencies]

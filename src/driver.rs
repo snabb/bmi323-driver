@@ -1,12 +1,12 @@
 use core::fmt;
 
-#[cfg(not(feature = "async"))]
+#[cfg(feature = "blocking")]
 use embedded_hal::i2c::I2c as HalI2c;
-#[cfg(not(feature = "async"))]
+#[cfg(feature = "blocking")]
 use embedded_hal::spi::SpiDevice as HalSpiDevice;
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 use embedded_hal_async::i2c::I2c as HalI2c;
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 use embedded_hal_async::spi::SpiDevice as HalSpiDevice;
 
 use crate::registers::TransportKind;
@@ -15,9 +15,10 @@ use crate::{AccelRange, GyroRange, I2cTransport, SpiTransport};
 
 /// BMI323 driver.
 ///
-/// In blocking mode (`features = ["blocking"]`, the default), all methods are
-/// synchronous. In async mode (`features = ["async"]`), all methods are
-/// `async fn`. Create this with [`Bmi323::new_i2c`] or [`Bmi323::new_spi`].
+/// Async mode (the default) exposes all methods as `async fn`. Add
+/// `features = ["blocking"]` (with `default-features = false`) to get the
+/// synchronous embedded-hal API instead. Create with [`Bmi323::new_i2c`] or
+/// [`Bmi323::new_spi`].
 pub struct Bmi323<T> {
     pub(crate) transport: T,
     pub(crate) kind: TransportKind,

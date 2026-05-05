@@ -1,11 +1,11 @@
-// Compiled twice via Cargo.toml [[test]] entries — once with `async` feature (default) and once
-// with `blocking`. The `run!` macro dispatches each driver call to the right form.
+// Compiled twice via Cargo.toml [[test]] entries — once in async mode (default, no feature flag)
+// and once with `blocking` feature. The `run!` macro dispatches each driver call to the right form.
 
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 use core::future::Future;
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 use core::pin::pin;
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
 
 use bmi323_driver::{
@@ -18,7 +18,7 @@ use bmi323_driver::{
     TapConfig, TapDetectionMode, TapReportingMode, TiltConfig,
 };
 use embedded_hal_mock::eh1::delay::{CheckedDelay, Transaction as DelayTransaction};
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 use embedded_hal_mock::eh1::digital::{
     Mock as PinMock, State as PinState, Transaction as PinTransaction,
 };
@@ -89,7 +89,7 @@ const SOFT_RESET: u16 = 0xDEAF;
 
 /// Minimal executor for driving futures in these unit tests; the mock HAL
 /// operations always complete immediately so a no-op waker is sufficient.
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 fn block_on<F: Future>(future: F) -> F::Output {
     fn raw_waker() -> RawWaker {
         fn clone(_: *const ()) -> RawWaker {
@@ -118,9 +118,9 @@ fn block_on<F: Future>(future: F) -> F::Output {
 /// or runs through `block_on` in async mode.
 macro_rules! run {
     ($expr:expr) => {{
-        #[cfg(not(feature = "async"))]
+        #[cfg(feature = "blocking")]
         let __result = $expr;
-        #[cfg(feature = "async")]
+        #[cfg(not(feature = "blocking"))]
         let __result = block_on($expr);
         __result
     }};
@@ -129,16 +129,16 @@ macro_rules! run {
 /// Build a `DelayTransaction` for the active feature mode.
 macro_rules! delay_tx {
     (ms, $n:expr) => {{
-        #[cfg(not(feature = "async"))]
+        #[cfg(feature = "blocking")]
         let __tx = DelayTransaction::delay_ms($n);
-        #[cfg(feature = "async")]
+        #[cfg(not(feature = "blocking"))]
         let __tx = DelayTransaction::async_delay_ms($n);
         __tx
     }};
     (us, $n:expr) => {{
-        #[cfg(not(feature = "async"))]
+        #[cfg(feature = "blocking")]
         let __tx = DelayTransaction::delay_us($n);
-        #[cfg(feature = "async")]
+        #[cfg(not(feature = "blocking"))]
         let __tx = DelayTransaction::async_delay_us($n);
         __tx
     }};
@@ -1157,7 +1157,7 @@ fn run_self_test_accelerometer_selection_times_out_when_feature_never_signals() 
 }
 
 /// `wait_for_interrupt` is only available in async builds.
-#[cfg(feature = "async")]
+#[cfg(not(feature = "blocking"))]
 #[test]
 fn wait_for_interrupt_waits_for_high_then_reads_status() {
     let i2c_expectations = [read_word(INT_STATUS_INT1, 0x0002)]; // any_motion bit set
