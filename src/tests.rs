@@ -514,3 +514,16 @@ fn temperature_raw_512_is_24_celsius() {
     let result: Result<f32, Error<()>> = temperature_raw_to_celsius(512);
     assert!((result.unwrap() - 24.0).abs() < 1e-5);
 }
+
+// BMI323 power-on reset: ACC_CONF = GYR_CONF = 0x0000 → G2 / Dps125 (datasheet §6.1).
+// The driver bookkeeping cache must match so that accel_range()/gyro_range() return the
+// correct scale before the caller has called set_accel_config/set_gyro_config.
+#[cfg(not(target_os = "none"))]
+#[test]
+fn initial_bookkeeping_matches_silicon_por_defaults() {
+    use embedded_hal_mock::eh1::i2c::Mock as I2cMock;
+    let imu = crate::Bmi323::new_i2c(I2cMock::new(&[]), 0x68);
+    assert_eq!(imu.accel_range(), AccelRange::G2);
+    assert_eq!(imu.gyro_range(), GyroRange::Dps125);
+    imu.destroy().done();
+}
