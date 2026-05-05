@@ -204,27 +204,27 @@ where
 
 ## Repository examples
 
-- `examples/blocking_i2c_basic.rs`
+- [`examples/blocking_i2c_basic.rs`](./examples/blocking_i2c_basic.rs)
   Blocking I2C configuration and sample reads.
-- `examples/async_i2c_interrupt.rs`
+- [`examples/async_i2c_interrupt.rs`](./examples/async_i2c_interrupt.rs)
   Generic async interrupt-driven setup using `embedded-hal-async`.
-- `examples/async_i2c_no_motion.rs`
+- [`examples/async_i2c_no_motion.rs`](./examples/async_i2c_no_motion.rs)
   Generic async no-motion detection setup using `embedded-hal-async`.
-- `examples/async_i2c_tap.rs`
+- [`examples/async_i2c_tap.rs`](./examples/async_i2c_tap.rs)
   Generic async tap-detection setup using `embedded-hal-async`.
-- `examples/async_i2c_orientation.rs`
+- [`examples/async_i2c_orientation.rs`](./examples/async_i2c_orientation.rs)
   Generic async orientation-detection setup using `embedded-hal-async`.
-- `examples/async_i2c_flat.rs`
+- [`examples/async_i2c_flat.rs`](./examples/async_i2c_flat.rs)
   Generic async flat-detection setup using `embedded-hal-async`.
-- `examples/async_i2c_significant_motion.rs`
+- [`examples/async_i2c_significant_motion.rs`](./examples/async_i2c_significant_motion.rs)
   Generic async significant-motion detection setup using `embedded-hal-async`.
-- `examples/async_i2c_tilt.rs`
+- [`examples/async_i2c_tilt.rs`](./examples/async_i2c_tilt.rs)
   Generic async tilt-detection setup using `embedded-hal-async`.
-- `examples/async_i2c_step_counter.rs`
+- [`examples/async_i2c_step_counter.rs`](./examples/async_i2c_step_counter.rs)
   Generic async step-detector and step-counter setup using `embedded-hal-async`.
-- `examples/async_i2c_alt_config.rs`
+- [`examples/async_i2c_alt_config.rs`](./examples/async_i2c_alt_config.rs)
   Generic async alternate accel-configuration switching using any-motion and no-motion.
-- `examples/async_i2c_self_test.rs`
+- [`examples/async_i2c_self_test.rs`](./examples/async_i2c_self_test.rs)
   Generic async built-in accelerometer and gyroscope self-test.
 
 Hardware-specific [STM32G030F6](https://www.st.com/en/microcontrollers-microprocessors/stm32g030f6.html) [Embassy](https://embassy.dev/) examples are in the separate
