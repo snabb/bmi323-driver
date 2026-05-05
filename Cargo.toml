@@ -22,17 +22,17 @@ include = [
 
 [package.metadata.docs.rs]
 features = ["async", "defmt"]
-no-default-features = true
+no-default-features = false
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 # Exactly one of "blocking" or "async" must be selected.
 # Enabling both simultaneously will cause a compile error.
-default = ["blocking"]
+default = ["async"]
+# Async driver using embedded-hal-async traits (default).
+async = ["dep:embedded-hal-async"]
 # Blocking (synchronous) driver using embedded-hal traits.
 blocking = ["maybe-async/is_sync"]
-# Async driver using embedded-hal-async traits.
-async = ["dep:embedded-hal-async"]
 defmt = ["dep:defmt"]
 
 [dependencies]

@@ -23,23 +23,23 @@ jobs:
       - name: Format check
         run: cargo fmt --check
 
-      - name: Clippy (blocking)
-        run: cargo clippy --features blocking,defmt -- -D warnings
-
       - name: Clippy (async)
-        run: cargo clippy --no-default-features --features async,defmt -- -D warnings
+        run: cargo clippy --features defmt -- -D warnings
 
-      - name: Tests (blocking)
-        run: cargo test --features blocking
+      - name: Clippy (blocking)
+        run: cargo clippy --no-default-features --features blocking,defmt -- -D warnings
 
       - name: Tests (async)
-        run: cargo test --no-default-features --features async
+        run: cargo test
 
-      - name: Examples check (blocking)
-        run: cargo check --examples --features blocking
+      - name: Tests (blocking)
+        run: cargo test --no-default-features --features blocking
 
       - name: Examples check (async)
-        run: cargo check --no-default-features --examples --features async
+        run: cargo check --examples
+
+      - name: Examples check (blocking)
+        run: cargo check --no-default-features --examples --features blocking
 
       - name: Package verification
         run: cargo package
@@ -71,11 +71,11 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
-      - name: Coverage (blocking)
-        run: cargo llvm-cov --no-report --features blocking
-
       - name: Coverage (async)
-        run: cargo llvm-cov --no-report --no-default-features --features async
+        run: cargo llvm-cov --no-report
+
+      - name: Coverage (blocking)
+        run: cargo llvm-cov --no-report --no-default-features --features blocking
 
       - name: Generate coverage report
         run: cargo llvm-cov report --lcov --output-path lcov.info

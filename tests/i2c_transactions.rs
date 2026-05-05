@@ -1,5 +1,5 @@
-// Compiled twice via Cargo.toml [[test]] entries — once with `blocking` feature and once
-// with `async`. The `run!` macro dispatches each driver call to the right form.
+// Compiled twice via Cargo.toml [[test]] entries — once with `async` feature (default) and once
+// with `blocking`. The `run!` macro dispatches each driver call to the right form.
 
 #[cfg(feature = "async")]
 use core::future::Future;
@@ -118,7 +118,7 @@ fn block_on<F: Future>(future: F) -> F::Output {
 /// or runs through `block_on` in async mode.
 macro_rules! run {
     ($expr:expr) => {{
-        #[cfg(feature = "blocking")]
+        #[cfg(not(feature = "async"))]
         let __result = $expr;
         #[cfg(feature = "async")]
         let __result = block_on($expr);
@@ -129,14 +129,14 @@ macro_rules! run {
 /// Build a `DelayTransaction` for the active feature mode.
 macro_rules! delay_tx {
     (ms, $n:expr) => {{
-        #[cfg(feature = "blocking")]
+        #[cfg(not(feature = "async"))]
         let __tx = DelayTransaction::delay_ms($n);
         #[cfg(feature = "async")]
         let __tx = DelayTransaction::async_delay_ms($n);
         __tx
     }};
     (us, $n:expr) => {{
-        #[cfg(feature = "blocking")]
+        #[cfg(not(feature = "async"))]
         let __tx = DelayTransaction::delay_us($n);
         #[cfg(feature = "async")]
         let __tx = DelayTransaction::async_delay_us($n);
