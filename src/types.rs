@@ -490,7 +490,8 @@ impl GyroRange {
 /// High-level accelerometer configuration written to `ACC_CONF`
 /// (§6.1.2, Register (0x20) acc_conf).
 ///
-/// `Default::default()` yields:
+/// `Default::default()` yields a ready-to-use active configuration (not the
+/// BMI323 power-on reset state, which has the sensor disabled):
 /// - mode: [`AccelMode::Normal`]
 /// - average: [`AverageSamples::Avg1`]
 /// - bandwidth: [`Bandwidth::OdrOver2`]
@@ -537,7 +538,8 @@ impl AccelConfig {
 /// High-level gyroscope configuration written to `GYR_CONF`
 /// (§6.1.2, Register (0x21) gyr_conf).
 ///
-/// `Default::default()` yields:
+/// `Default::default()` yields a ready-to-use active configuration (not the
+/// BMI323 power-on reset state, which has the sensor disabled):
 /// - mode: [`GyroMode::Normal`]
 /// - average: [`AverageSamples::Avg1`]
 /// - bandwidth: [`Bandwidth::OdrOver2`]
