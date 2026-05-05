@@ -1,4 +1,4 @@
-use bmi323_driver::{AccelConfig, Bmi323, GyroConfig, I2C_ADDRESS_PRIMARY, OutputDataRate};
+use bmi323_driver::{AccelConfig, Bmi323, GyroConfig, OutputDataRate, I2C_ADDRESS_PRIMARY};
 use embedded_hal::delay::DelayNs;
 use embedded_hal::i2c::I2c;
 

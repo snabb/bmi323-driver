@@ -1,4 +1,4 @@
-use bmi323_driver::{Bmi323, I2C_ADDRESS_PRIMARY, SelfTestSelection};
+use bmi323_driver::{Bmi323, SelfTestSelection, I2C_ADDRESS_PRIMARY};
 use embedded_hal_async::delay::DelayNs;
 use embedded_hal_async::i2c::I2c;
 

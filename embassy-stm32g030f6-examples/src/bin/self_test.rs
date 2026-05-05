@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-use bmi323_driver::{Bmi323, I2C_ADDRESS_PRIMARY, SelfTestSelection};
+use bmi323_driver::{Bmi323, SelfTestSelection, I2C_ADDRESS_PRIMARY};
 use defmt::{error, info};
 use defmt_rtt as _;
 use embassy_executor::Spawner;

@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-use bmi323_driver::{AccelConfig, Bmi323, GyroConfig, I2C_ADDRESS_PRIMARY, OutputDataRate};
+use bmi323_driver::{AccelConfig, Bmi323, GyroConfig, OutputDataRate, I2C_ADDRESS_PRIMARY};
 use defmt::{error, info};
 use defmt_rtt as _;
 use embassy_executor::Spawner;

@@ -1,7 +1,7 @@
 use bmi323_driver::{
-    AccelConfig, ActiveLevel, Bmi323, EventReportMode, I2C_ADDRESS_PRIMARY, InterruptChannel,
-    InterruptPinConfig, InterruptRoute, InterruptSource, OutputDataRate, OutputMode,
-    SignificantMotionConfig,
+    AccelConfig, ActiveLevel, Bmi323, EventReportMode, InterruptChannel, InterruptPinConfig,
+    InterruptRoute, InterruptSource, OutputDataRate, OutputMode, SignificantMotionConfig,
+    I2C_ADDRESS_PRIMARY,
 };
 use embedded_hal_async::delay::DelayNs;
 use embedded_hal_async::digital::Wait;

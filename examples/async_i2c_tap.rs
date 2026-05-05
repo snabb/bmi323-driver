@@ -1,7 +1,7 @@
 use bmi323_driver::{
-    AccelConfig, ActiveLevel, Bmi323, I2C_ADDRESS_PRIMARY, InterruptChannel, InterruptPinConfig,
-    InterruptRoute, InterruptSource, OutputDataRate, OutputMode, TapAxis, TapConfig,
-    TapDetectionMode, TapReportingMode,
+    AccelConfig, ActiveLevel, Bmi323, InterruptChannel, InterruptPinConfig, InterruptRoute,
+    InterruptSource, OutputDataRate, OutputMode, TapAxis, TapConfig, TapDetectionMode,
+    TapReportingMode, I2C_ADDRESS_PRIMARY,
 };
 use embedded_hal_async::delay::DelayNs;
 use embedded_hal_async::digital::Wait;
