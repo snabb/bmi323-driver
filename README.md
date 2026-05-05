@@ -19,6 +19,11 @@ After `init()`, configure the accelerometer and gyroscope explicitly before
 depending on sample reads. The driver does not promise application-ready accel
 or gyro settings immediately after initialization.
 
+The API is built on top of `embedded-hal` 1.0 and `embedded-hal-async` 1.0.
+The driver does not own the external interrupt GPIO, which keeps it transport
+agnostic and easy to integrate with Embassy or platform-specific interrupt
+handling.
+
 ## Features
 
 - `embedded-hal` 1.0 blocking API support
@@ -46,9 +51,52 @@ causes a compile error.
 - `blocking`: synchronous driver using `embedded-hal` traits
 - `defmt`: derives `defmt::Format` for public value types
 
+## Transport model
+
+The BMI323 uses 8-bit register addresses with 16-bit register payloads. Reads
+include interface-specific dummy bytes, which this crate handles internally for
+both I2C and SPI.
+
+## Interrupt model
+
+BMI323 interrupt sources are routed to `INT1`, `INT2`, or I3C IBI inside the
+sensor. The driver configures the sensor-side routing, but the external GPIO
+line is managed by the application:
+
+- in blocking applications, poll the GPIO or an MCU interrupt flag yourself,
+  then call `read_interrupt_status()`
+- in async applications, either wait on the GPIO yourself or use
+  `wait_for_interrupt()` with a pin implementing
+  `embedded_hal_async::digital::Wait`
+
+## Feature engine notes
+
+Advanced features such as any-motion and no-motion depend on the BMI323 feature
+engine. The datasheet requires the feature engine to be enabled before sensors
+are re-enabled for these features. The helper methods in this crate follow that
+model, but application code should still keep the order in mind when building
+its configuration sequence.
+
+For motion-feature timing and threshold fields, prefer the conversion helpers
+on `AnyMotionConfig` and `NoMotionConfig` instead of hand-coding raw register
+values.
+
+The `report_mode` and `interrupt_hold` fields are written to a single shared
+BMI323 register (`EXT_GEN_SET_1`). When multiple feature-engine blocks are
+configured, the last `configure_*` call's values win for both fields. Use the
+same values across all `configure_*` calls, or set them in the intended final
+order.
+
+The driver tracks local range fields initialized to `AccelRange::G2` and
+`GyroRange::Dps125` to match the BMI323 power-on reset defaults
+(`ACC_CONF`/`GYR_CONF = 0x0000`).
+
 ### Blocking I2C example
 
 ```rust,no_run
+# #[cfg(not(feature = "blocking"))] fn main() {}
+# #[cfg(feature = "blocking")]
+# fn main() {
 use bmi323_driver::{
     AccelConfig, AccelRange, Bmi323, GyroConfig, GyroRange, I2C_ADDRESS_PRIMARY,
     OutputDataRate,
@@ -62,7 +110,8 @@ where
     D: DelayNs,
 {
     let mut imu = Bmi323::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
-    imu.init(delay)?;
+    let state = imu.init(delay)?;
+    let _ = state;
 
     imu.set_accel_config(AccelConfig {
         odr: OutputDataRate::Hz100,
@@ -80,16 +129,19 @@ where
     let _ = (accel_g, gyro_dps);
     Ok(())
 }
+# }
 ```
 
 ### Async interrupt-driven advanced example
 
 ```rust,no_run
+# #[cfg(feature = "blocking")] fn main() {}
+# #[cfg(not(feature = "blocking"))]
+# fn main() {
 use bmi323_driver::{
-    AccelConfig, AccelRange, ActiveLevel, AnyMotionConfig, Bmi323Async,
-    EventReportMode, I2C_ADDRESS_PRIMARY, InterruptChannel, InterruptPinConfig,
-    InterruptRoute, InterruptSource, MotionAxes, OutputDataRate, OutputMode,
-    ReferenceUpdate,
+    AccelConfig, ActiveLevel, AnyMotionConfig, Bmi323, EventReportMode,
+    I2C_ADDRESS_PRIMARY, InterruptChannel, InterruptPinConfig, InterruptRoute,
+    InterruptSource, MotionAxes, OutputDataRate, OutputMode, ReferenceUpdate,
 };
 use embedded_hal_async::delay::DelayNs;
 use embedded_hal_async::digital::Wait;
@@ -105,7 +157,7 @@ where
     D: DelayNs,
     P: Wait,
 {
-    let mut imu = Bmi323Async::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
+    let mut imu = Bmi323::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
     imu.init(delay).await?;
     imu.enable_feature_engine(delay).await?;
     imu.set_accel_config(AccelConfig {
@@ -147,6 +199,7 @@ where
     }
     Ok(())
 }
+# }
 ```
 
 ## Repository examples
