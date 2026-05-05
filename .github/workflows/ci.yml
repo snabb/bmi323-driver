@@ -56,6 +56,22 @@ jobs:
         working-directory: embassy-stm32g030f6-examples
         run: cargo clippy --bins --target thumbv6m-none-eabi -- -D warnings
 
+  msrv:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Rust 1.85
+        uses: dtolnay/rust-toolchain@1.85
+
+      - name: MSRV check (async)
+        run: cargo check --features async
+
+      - name: MSRV check (blocking)
+        run: cargo check --features blocking
+
   coverage:
     runs-on: ubuntu-latest
 
