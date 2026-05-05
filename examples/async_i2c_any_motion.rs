@@ -8,7 +8,7 @@ use embedded_hal_async::digital::Wait;
 use embedded_hal_async::i2c::I2c;
 
 #[allow(dead_code)]
-async fn embassy_style_task<I2C, INT, D>(
+async fn embassy_style_any_motion_task<I2C, INT, D>(
     i2c: I2C,
     int1: &mut INT,
     delay: &mut D,

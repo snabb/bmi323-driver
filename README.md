@@ -206,8 +206,10 @@ where
 
 - [`examples/blocking_i2c_basic.rs`](./examples/blocking_i2c_basic.rs)
   Blocking I2C configuration and sample reads.
-- [`examples/async_i2c_interrupt.rs`](./examples/async_i2c_interrupt.rs)
-  Generic async interrupt-driven setup using `embedded-hal-async`.
+- [`examples/async_i2c_basic.rs`](./examples/async_i2c_basic.rs)
+  Async I2C configuration and sample reads using `embedded-hal-async`.
+- [`examples/async_i2c_any_motion.rs`](./examples/async_i2c_any_motion.rs)
+  Generic async any-motion detection setup using `embedded-hal-async`.
 - [`examples/async_i2c_no_motion.rs`](./examples/async_i2c_no_motion.rs)
   Generic async no-motion detection setup using `embedded-hal-async`.
 - [`examples/async_i2c_tap.rs`](./examples/async_i2c_tap.rs)
