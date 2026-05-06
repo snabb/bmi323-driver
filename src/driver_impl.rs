@@ -282,12 +282,12 @@ where
         channel: InterruptChannel,
         config: InterruptPinConfig,
     ) -> Result<(), Error<<Self as Access>::BusError>> {
-        let mut word = self.read_word(IO_INT_CTRL).await.map_err(Error::Bus)?;
         let shift = match channel {
             InterruptChannel::Int1 => 0,
             InterruptChannel::Int2 => 8,
             InterruptChannel::Ibi => return Ok(()),
         };
+        let mut word = self.read_word(IO_INT_CTRL).await.map_err(Error::Bus)?;
         word &= !(0b111 << shift);
         word |= ((matches!(config.active_level, ActiveLevel::High) as u16) << shift)
             | ((matches!(config.output_mode, OutputMode::OpenDrain) as u16) << (shift + 1))

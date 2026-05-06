@@ -941,9 +941,8 @@ fn configure_interrupt_pin_int2_writes_upper_byte_bits() {
 }
 
 #[test]
-fn configure_interrupt_pin_ibi_reads_register_then_returns_without_writing() {
-    // The driver reads IO_INT_CTRL before the channel match, then returns for Ibi
-    let expectations = [read_word(IO_INT_CTRL, 0x0000)];
+fn configure_interrupt_pin_ibi_returns_without_bus_transaction() {
+    let expectations = [];
     let i2c = I2cMock::new(&expectations);
     let mut imu = Bmi323::new_i2c(i2c, ADDR);
 
