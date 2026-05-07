@@ -368,7 +368,7 @@ where
 
     /// Read raw FIFO words into the provided output slice.
     ///
-    /// `words.len()` must not exceed [`MAX_WORDS_PER_READ`] due to the fixed
+    /// `words.len()` must not exceed [`crate::MAX_WORDS_PER_READ`] due to the fixed
     /// internal transfer buffer. Use [`fifo_fill_level`](Self::fifo_fill_level)
     /// first and split larger reads into chunks of at most that size.
     ///
