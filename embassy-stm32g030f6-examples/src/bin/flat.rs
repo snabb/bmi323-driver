@@ -45,17 +45,11 @@ async fn main(_spawner: Spawner) {
     let mut imu = Bmi323::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
 
     if let Err(err) = imu.init(&mut delay).await {
-        error!("BMI323 init failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 init failed: {:?}", err);
     }
 
     if let Err(err) = imu.enable_feature_engine(&mut delay).await {
-        error!("BMI323 feature engine enable failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 feature engine enable failed: {:?}", err);
     }
 
     if let Err(err) = imu
@@ -65,10 +59,7 @@ async fn main(_spawner: Spawner) {
         })
         .await
     {
-        error!("BMI323 accel config failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 accel config failed: {:?}", err);
     }
 
     if let Err(err) = imu
@@ -83,17 +74,11 @@ async fn main(_spawner: Spawner) {
         })
         .await
     {
-        error!("BMI323 flat config failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 flat config failed: {:?}", err);
     }
 
     if let Err(err) = imu.set_interrupt_latching(true).await {
-        error!("BMI323 interrupt latch config failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 interrupt latch config failed: {:?}", err);
     }
 
     if let Err(err) = imu
@@ -107,20 +92,14 @@ async fn main(_spawner: Spawner) {
         )
         .await
     {
-        error!("BMI323 INT1 pin config failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 INT1 pin config failed: {:?}", err);
     }
 
     if let Err(err) = imu
         .map_interrupt(InterruptSource::Flat, InterruptRoute::Int1)
         .await
     {
-        error!("BMI323 flat routing failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 flat routing failed: {:?}", err);
     }
 
     info!("BMI323 flat detection armed");

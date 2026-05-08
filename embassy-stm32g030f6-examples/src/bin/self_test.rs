@@ -36,10 +36,7 @@ async fn main(_spawner: Spawner) {
     let mut imu = Bmi323::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
 
     if let Err(err) = imu.init(&mut delay).await {
-        error!("BMI323 init failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 init failed: {:?}", err);
     }
 
     match imu.run_self_test(&mut delay, SelfTestSelection::Both).await {

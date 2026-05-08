@@ -45,17 +45,11 @@ async fn main(_spawner: Spawner) {
     let mut imu = Bmi323::new_i2c(i2c, I2C_ADDRESS_PRIMARY);
 
     if let Err(err) = imu.init(&mut delay).await {
-        error!("BMI323 init failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 init failed: {:?}", err);
     }
 
     if let Err(err) = imu.enable_feature_engine(&mut delay).await {
-        error!("BMI323 feature engine enable failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 feature engine enable failed: {:?}", err);
     }
 
     let profile = AltAccelSwitchProfile::low_power_to_high_performance(
@@ -66,17 +60,11 @@ async fn main(_spawner: Spawner) {
     );
 
     if let Err(err) = imu.set_accel_config(profile.user_accel).await {
-        error!("BMI323 user accel config failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 user accel config failed: {:?}", err);
     }
 
     if let Err(err) = imu.set_alt_accel_config(profile.alternate_accel).await {
-        error!("BMI323 alternate accel config failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 alternate accel config failed: {:?}", err);
     }
 
     if let Err(err) = imu
@@ -92,10 +80,7 @@ async fn main(_spawner: Spawner) {
         })
         .await
     {
-        error!("BMI323 any-motion config failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 any-motion config failed: {:?}", err);
     }
 
     if let Err(err) = imu
@@ -111,24 +96,15 @@ async fn main(_spawner: Spawner) {
         })
         .await
     {
-        error!("BMI323 no-motion config failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 no-motion config failed: {:?}", err);
     }
 
     if let Err(err) = imu.configure_alt_config_control(profile.control).await {
-        error!("BMI323 alternate control config failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 alternate control config failed: {:?}", err);
     }
 
     if let Err(err) = imu.set_interrupt_latching(true).await {
-        error!("BMI323 interrupt latch config failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 interrupt latch config failed: {:?}", err);
     }
 
     if let Err(err) = imu
@@ -142,30 +118,21 @@ async fn main(_spawner: Spawner) {
         )
         .await
     {
-        error!("BMI323 INT1 pin config failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 INT1 pin config failed: {:?}", err);
     }
 
     if let Err(err) = imu
         .map_interrupt(InterruptSource::AnyMotion, InterruptRoute::Int1)
         .await
     {
-        error!("BMI323 any-motion routing failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 any-motion routing failed: {:?}", err);
     }
 
     if let Err(err) = imu
         .map_interrupt(InterruptSource::NoMotion, InterruptRoute::Int1)
         .await
     {
-        error!("BMI323 no-motion routing failed: {:?}", err);
-        loop {
-            cortex_m::asm::wfi();
-        }
+        defmt::panic!("BMI323 no-motion routing failed: {:?}", err);
     }
 
     info!("BMI323 alternate accel switching armed");
